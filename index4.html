@@ -1,0 +1,2057 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="あいうえお順・日本語単語リスニング＆セルフテスト（第5課～第9課）自主學習有聲互動測驗系統，支援電腦、手機瀏覽器與 LINE 內建瀏覽器。">
+  <!-- 手機瀏覽器工具列顏色，讓 LINE／Safari／Chrome 分頁看起來更一致 -->
+  <meta name="theme-color" content="#4338ca">
+  <!-- iOS：加到主畫面時以全螢幕 App 樣式開啟 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="あいうえお順・日本語単語リスニング＆セルフテスト">
+  <!-- 避免日文假名或數字被自動誤判為電話號碼而加上連結底線 -->
+  <meta name="format-detection" content="telephone=no">
+  <title>あいうえお順・日本語単語リスニング＆セルフテスト (第5課-第9課) 自主學習有聲互動測驗系統</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Vue 3 CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts Inter & Noto Sans JP -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Inter', 'Noto Sans JP', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+      background-color: #f8fafc;
+    }
+    .japanese-text {
+      font-family: 'Noto Sans JP', sans-serif;
+    }
+    .card-flip {
+      perspective: 1000px;
+    }
+    .card-inner {
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+    }
+    .card-flipped {
+      transform: rotateY(180deg);
+    }
+    .card-front, .card-back {
+      backface-visibility: hidden;
+    }
+    .card-back {
+      transform: rotateY(180deg);
+    }
+    /* Custom scrollbar for better visual balance */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    /* iPhone 瀏海／動態島安全區域，避免固定頂部列被遮擋 */
+    header.app-header {
+      padding-top: env(safe-area-inset-top);
+    }
+  </style>
+</head>
+<body class="text-slate-800 bg-slate-50 min-h-screen flex flex-col">
+
+  <div id="app" class="flex-1 flex flex-col min-h-screen">
+    
+    <!-- Top Navigation Bar -->
+    <header class="app-header bg-indigo-700 text-white shadow-md sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center space-x-3 cursor-pointer" @click="currentView = 'home'">
+          <div class="bg-white text-indigo-700 p-2 rounded-lg font-bold text-xl">あ</div>
+          <div>
+            <h1 class="font-bold text-lg leading-tight sm:text-xl">あいうえお順・日本語単語リスニング＆セルフテスト</h1>
+            <p class="text-xs text-indigo-200">第5課～第9課 有聲互動自主學習系統</p>
+          </div>
+        </div>
+        
+        <nav class="hidden md:flex items-center space-x-1">
+          <button @click="currentView = 'home'" :class="navBtnClass('home')" class="px-3 py-2 rounded-md text-sm font-medium transition">
+            <i class="fa-solid fa-house mr-1"></i> 首頁
+          </button>
+          <button @click="currentView = 'lessons'" :class="navBtnClass('lessons')" class="px-3 py-2 rounded-md text-sm font-medium transition">
+            <i class="fa-solid fa-book-open mr-1"></i> 課別學習
+          </button>
+          <button @click="currentView = 'favorites'" :class="navBtnClass('favorites')" class="px-3 py-2 rounded-md text-sm font-medium transition">
+            <i class="fa-solid fa-star text-amber-300 mr-1"></i> 收藏單字 ({{ favorites.length }})
+          </button>
+          <button @click="currentView = 'mistakes'" :class="navBtnClass('mistakes')" class="px-3 py-2 rounded-md text-sm font-medium transition">
+            <i class="fa-solid fa-circle-exclamation text-rose-300 mr-1"></i> 錯題本 ({{ mistakes.length }})
+          </button>
+          <button @click="currentView = 'stats'" :class="navBtnClass('stats')" class="px-3 py-2 rounded-md text-sm font-medium transition">
+            <i class="fa-solid fa-chart-line mr-1"></i> 學習紀錄
+          </button>
+          <button @click="currentView = 'teacher'" :class="navBtnClass('teacher')" class="px-3 py-2 rounded-md text-sm font-medium transition bg-indigo-800 hover:bg-indigo-900">
+            <i class="fa-solid fa-user-gear mr-1"></i> 教師管理
+          </button>
+        </nav>
+
+        <!-- Mobile Menu Toggle Button -->
+        <button @click="mobileMenuOpen = !mobileMenuOpen" aria-label="開啟選單" class="md:hidden p-2 rounded-md text-white hover:bg-indigo-600 focus:outline-none">
+          <i class="fa-solid" :class="mobileMenuOpen ? 'fa-xmark text-xl' : 'fa-bars text-xl'"></i>
+        </button>
+      </div>
+
+      <!-- Mobile Navigation Drawer -->
+      <div v-if="mobileMenuOpen" class="md:hidden bg-indigo-800 border-t border-indigo-600 px-4 pt-2 pb-4 space-y-2">
+        <button @click="navigateMobile('home')" class="w-full text-left px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-700">
+          <i class="fa-solid fa-house w-6"></i> 首頁
+        </button>
+        <button @click="navigateMobile('lessons')" class="w-full text-left px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-700">
+          <i class="fa-solid fa-book-open w-6"></i> 課別學習
+        </button>
+        <button @click="navigateMobile('favorites')" class="w-full text-left px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-700">
+          <i class="fa-solid fa-star text-amber-300 w-6"></i> 收藏單字 ({{ favorites.length }})
+        </button>
+        <button @click="navigateMobile('mistakes')" class="w-full text-left px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-700">
+          <i class="fa-solid fa-circle-exclamation text-rose-300 w-6"></i> 錯題本 ({{ mistakes.length }})
+        </button>
+        <button @click="navigateMobile('stats')" class="w-full text-left px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-700">
+          <i class="fa-solid fa-chart-line w-6"></i> 學習紀錄
+        </button>
+        <button @click="navigateMobile('teacher')" class="w-full text-left px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-700">
+          <i class="fa-solid fa-user-gear w-6"></i> 教師管理
+        </button>
+      </div>
+    </header>
+
+    <!-- Global Voice Speed & Settings Bar -->
+    <div class="bg-indigo-50 border-b border-indigo-100 py-2 px-4 shadow-inner">
+      <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-sm">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-volume-high text-indigo-600"></i>
+          <span class="font-medium text-slate-700">發音語言：<span class="font-bold text-indigo-800">ja-JP (標準日語)</span></span>
+          <span class="hidden sm:inline text-slate-400">｜</span>
+          <span class="hidden sm:inline text-xs text-slate-500">語音引擎：<span class="font-semibold text-slate-600">{{ japaneseVoiceLabel }}</span></span>
+        </div>
+        <div class="flex items-center space-x-4">
+          <div class="flex items-center space-x-2">
+            <span class="text-slate-600 font-medium"><i class="fa-solid fa-gauge-high mr-1"></i>播放語速：</span>
+            <div class="inline-flex rounded-md shadow-sm">
+              <button v-for="rate in speechRates" :key="rate" 
+                      @click="currentSpeechRate = rate"
+                      :class="currentSpeechRate === rate ? 'bg-indigo-600 text-white font-bold' : 'bg-white text-slate-700 hover:bg-slate-100'"
+                      class="px-2.5 py-1 text-xs border border-slate-300 first:rounded-l-md last:rounded-r-md transition">
+                {{ rate }}x
+              </button>
+            </div>
+          </div>
+          <button @click="testAudio" class="text-xs bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-2 py-1 rounded border border-indigo-300 transition">
+            <i class="fa-solid fa-circle-play mr-1"></i>語音測試
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT VIEW ROUTING -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6">
+
+      <!-- ================= 1. HOME VIEW ================= -->
+      <section v-if="currentView === 'home'" class="space-y-8">
+        <!-- Hero Section -->
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-6 md:p-10 text-white shadow-xl relative overflow-hidden">
+          <div class="relative z-10 max-w-2xl space-y-4">
+            <span class="inline-block bg-white/20 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-indigo-100">
+              あいうえお順・日本語単語リスニング＆セルフテスト 專用輔助教材
+            </span>
+            <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight">
+              第5課～第9課 自主學習有聲互動系統
+            </h2>
+            <p class="text-indigo-100 leading-relaxed text-sm md:text-base">
+              收錄全冊完整 301 個核心單字。支援 ja-JP 高品質標準語音、多速調整、跟讀錄音比對、錯題本歸納與 9 種深層互動測驗模式！
+            </p>
+            <div class="pt-2 flex flex-wrap gap-3">
+              <button @click="startLessonStudy(5)" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-6 py-3 rounded-xl shadow-lg transition flex items-center">
+                <i class="fa-solid fa-play mr-2"></i> 開始學習 (第5課)
+              </button>
+              <button @click="currentView = 'lessons'" class="bg-white/10 hover:bg-white/20 text-white font-semibold px-6 py-3 rounded-xl border border-white/30 backdrop-blur transition flex items-center">
+                <i class="fa-solid fa-list-check mr-2"></i> 選擇課別與模式
+              </button>
+            </div>
+          </div>
+          <!-- Decorative Icon -->
+          <i class="fa-solid fa-language text-white/10 text-9xl absolute -right-6 -bottom-6 pointer-events-none"></i>
+        </div>
+
+        <!-- Lessons Cards Grid -->
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold text-slate-800 flex items-center">
+              <i class="fa-solid fa-book text-indigo-600 mr-2"></i> 課別學習地圖
+            </h3>
+            <span class="text-xs text-slate-500">共 5 個課別 301 個單字</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div v-for="lesson in lessonOverview" :key="lesson.id" class="bg-white rounded-xl shadow-md border border-slate-200 hover:shadow-lg transition flex flex-col justify-between overflow-hidden">
+              <div class="p-5">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="bg-indigo-100 text-indigo-800 font-bold text-xs px-2.5 py-1 rounded-full">
+                    第 {{ lesson.id }} 課
+                  </span>
+                  <span class="text-xs font-semibold text-slate-500">
+                    <i class="fa-solid fa-font mr-1"></i>{{ getLessonWords(lesson.id).length }} 單字
+                  </span>
+                </div>
+                <h4 class="text-lg font-bold text-slate-800 mb-1">{{ lesson.title }}</h4>
+                <p class="text-xs text-slate-500 mb-4">{{ lesson.desc }}</p>
+                
+                <!-- Progress bar -->
+                <div class="space-y-1">
+                  <div class="flex justify-between text-xs text-slate-600">
+                    <span>學習進度</span>
+                    <span>{{ getLessonProgress(lesson.id) }}%</span>
+                  </div>
+                  <div class="w-full bg-slate-100 rounded-full h-2">
+                    <div class="bg-indigo-600 h-2 rounded-full transition-all duration-300" :style="{ width: getLessonProgress(lesson.id) + '%' }"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bg-slate-50 border-t border-slate-100 p-3 px-5 flex items-center justify-between gap-2">
+                <button @click="startLessonStudy(lesson.id)" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-3 rounded-lg text-sm text-center transition flex items-center justify-center">
+                  <i class="fa-solid fa-graduation-cap mr-1.5"></i> 單字學習
+                </button>
+                <button @click="openQuizMenu(lesson.id)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-3 rounded-lg text-sm text-center transition flex items-center justify-center">
+                  <i class="fa-solid fa-circle-question mr-1.5"></i> 進入測驗
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Stats & Notice -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+            <div class="p-3 bg-amber-100 text-amber-600 rounded-xl text-2xl">
+              <i class="fa-solid fa-star"></i>
+            </div>
+            <div>
+              <p class="text-xs text-slate-500">已收藏單字</p>
+              <p class="text-2xl font-extrabold text-slate-800">{{ favorites.length }} <span class="text-xs font-normal text-slate-500">/ 301</span></p>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+            <div class="p-3 bg-rose-100 text-rose-600 rounded-xl text-2xl">
+              <i class="fa-solid fa-circle-exclamation"></i>
+            </div>
+            <div>
+              <p class="text-xs text-slate-500">待複習錯題</p>
+              <p class="text-2xl font-extrabold text-slate-800">{{ mistakes.length }} <span class="text-xs font-normal text-slate-500">個</span></p>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+            <div class="p-3 bg-indigo-100 text-indigo-600 rounded-xl text-2xl">
+              <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+              <p class="text-xs text-slate-500">資料隱私權保護</p>
+              <p class="text-xs text-slate-600 mt-1">本機儲存、無須登入、錄音絕不上傳伺服器。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 2. LESSON SELECTION & MODE MENU ================= -->
+      <section v-if="currentView === 'lessons'" class="space-y-6">
+        <div class="flex items-center justify-between border-b pb-4">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-800">課別與模式選擇</h2>
+            <p class="text-sm text-slate-500">請選擇學習範疇與欲進行的測驗類型</p>
+          </div>
+          <button @click="currentView = 'home'" class="text-slate-600 hover:text-indigo-600 text-sm font-medium">
+            <i class="fa-solid fa-arrow-left mr-1"></i> 返回首頁
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Lesson Selection Column -->
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <h3 class="font-bold text-slate-800 border-b pb-2 flex items-center">
+              <i class="fa-solid fa-filter text-indigo-600 mr-2"></i> 1. 選擇學習範圍
+            </h3>
+            
+            <div class="space-y-2">
+              <label class="flex items-center p-3 rounded-lg border cursor-pointer transition hover:bg-slate-50"
+                     :class="selectedLessonFilter === 0 ? 'border-indigo-600 bg-indigo-50/50 font-semibold' : 'border-slate-200'">
+                <input type="radio" v-model="selectedLessonFilter" :value="0" class="text-indigo-600 focus:ring-indigo-500 mr-3">
+                <span class="flex-1 text-slate-800">全部課別 (第5課 ~ 第9課)</span>
+                <span class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">301詞</span>
+              </label>
+
+              <label v-for="l in 5" :key="l" 
+                     class="flex items-center p-3 rounded-lg border cursor-pointer transition hover:bg-slate-50"
+                     :class="selectedLessonFilter === (l+4) ? 'border-indigo-600 bg-indigo-50/50 font-semibold' : 'border-slate-200'">
+                <input type="radio" v-model="selectedLessonFilter" :value="l+4" class="text-indigo-600 focus:ring-indigo-500 mr-3">
+                <span class="flex-1 text-slate-800">第 {{ l+4 }} 課</span>
+                <span class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">{{ getLessonWords(l+4).length }}詞</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Mode Options Column -->
+          <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-5">
+            <h3 class="font-bold text-slate-800 border-b pb-2 flex items-center">
+              <i class="fa-solid fa-gamepad text-indigo-600 mr-2"></i> 2. 選擇學習或測驗模式
+            </h3>
+
+            <!-- Standard Learning Mode -->
+            <div>
+              <p class="text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">自主學習與播放</p>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <button @click="startLessonStudy(selectedLessonFilter)" class="p-4 border border-indigo-200 rounded-xl hover:bg-indigo-50/50 text-left transition flex items-start space-x-3 bg-gradient-to-r from-indigo-50/30 to-white">
+                  <div class="p-2.5 bg-indigo-600 text-white rounded-lg text-lg"><i class="fa-solid fa-id-card"></i></div>
+                  <div>
+                    <h4 class="font-bold text-indigo-900">單字卡學習模式</h4>
+                    <p class="text-xs text-slate-500 mt-1">卡片翻轉、聽音發音、跟讀錄音比對</p>
+                  </div>
+                </button>
+
+                <button @click="startContinuousPlay(selectedLessonFilter)" class="p-4 border border-indigo-200 rounded-xl hover:bg-indigo-50/50 text-left transition flex items-start space-x-3 bg-gradient-to-r from-indigo-50/30 to-white">
+                  <div class="p-2.5 bg-indigo-600 text-white rounded-lg text-lg"><i class="fa-solid fa-headphones"></i></div>
+                  <div>
+                    <h4 class="font-bold text-indigo-900">課別連續朗讀播放</h4>
+                    <p class="text-xs text-slate-500 mt-1">自動循環播放日語與中文沉浸聽力</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Quiz Modes -->
+            <div>
+              <p class="text-xs font-bold uppercase text-slate-400 tracking-wider mb-2">9 大有聲互動測驗</p>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <button v-for="mode in quizModes" :key="mode.id" 
+                        @click="startQuiz(mode.id)"
+                        class="p-3 border border-slate-200 rounded-xl hover:border-emerald-500 hover:bg-emerald-50/50 text-left transition flex flex-col justify-between group">
+                  <div>
+                    <div class="flex items-center justify-between mb-1">
+                      <i :class="mode.icon" class="text-emerald-600 group-hover:scale-110 transition-transform"></i>
+                      <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">測驗</span>
+                    </div>
+                    <h5 class="font-bold text-sm text-slate-800 group-hover:text-emerald-800">{{ mode.title }}</h5>
+                    <p class="text-xs text-slate-500 mt-1 leading-snug">{{ mode.desc }}</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 3. FLASHCARD STUDY MODE ================= -->
+      <section v-if="currentView === 'flashcard'" class="space-y-6 max-w-3xl mx-auto">
+        <!-- Control bar -->
+        <div class="flex items-center justify-between">
+          <button @click="currentView = 'lessons'" class="text-slate-600 hover:text-indigo-600 text-sm font-medium">
+            <i class="fa-solid fa-arrow-left mr-1"></i> 返回選擇
+          </button>
+          <div class="text-sm text-slate-500 font-medium">
+            範圍：<span class="font-bold text-slate-800">{{ selectedLessonFilter === 0 ? '全部課別' : '第 ' + selectedLessonFilter + ' 課' }}</span> 
+            ({{ currentWordIndex + 1 }} / {{ activeWordList.length }})
+          </div>
+        </div>
+
+        <!-- Flashcard View Container -->
+        <div v-if="currentWord" class="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden flex flex-col">
+          <!-- Card Header & Bookmark -->
+          <div class="bg-slate-50 px-6 py-3 border-b flex items-center justify-between">
+            <span class="text-xs font-bold text-indigo-700 bg-indigo-100 px-3 py-1 rounded-full">
+              第 {{ currentWord.lesson }} 課
+            </span>
+            <button @click="toggleFavorite(currentWord)" class="text-xl transition" :class="isFavorite(currentWord) ? 'text-amber-400 hover:text-amber-500' : 'text-slate-300 hover:text-slate-400'">
+              <i class="fa-solid fa-star"></i>
+            </button>
+          </div>
+
+          <!-- Card Body -->
+          <div class="p-8 md:p-12 text-center space-y-6 flex-1 flex flex-col justify-center items-center">
+            
+            <!-- Kana Reading -->
+            <div class="text-lg md:text-2xl text-indigo-600 font-medium tracking-wide">
+              {{ currentWord.reading }}
+            </div>
+
+            <!-- Kanji / Japanese Word -->
+            <div class="japanese-text text-4xl md:text-6xl font-extrabold text-slate-900 tracking-wider">
+              {{ currentWord.word }}
+            </div>
+
+            <!-- Audio Control Button -->
+            <div class="pt-2 flex items-center space-x-3">
+              <button @click="speakWord(currentWord.reading)" aria-label="播放單字發音" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full p-4 shadow-lg hover:scale-105 transition flex items-center justify-center w-14 h-14">
+                <i class="fa-solid fa-volume-high text-xl"></i>
+              </button>
+              <button @click="speakWord(currentWord.reading, 0.6)" aria-label="放慢速度播放發音" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-full px-3 py-1 text-xs font-semibold transition">
+                <i class="fa-solid fa-turtle mr-1"></i>0.6x 慢速
+              </button>
+            </div>
+
+            <!-- Toggle Chinese Meaning Display -->
+            <div class="pt-4 border-t border-slate-100 w-full max-w-sm">
+              <button v-if="!showMeaning" @click="showMeaning = true" class="text-sm text-slate-500 hover:text-indigo-600 underline">
+                <i class="fa-solid fa-eye mr-1"></i> 點擊顯示中文意思
+              </button>
+              <div v-else class="space-y-1">
+                <p class="text-2xl font-bold text-emerald-700">{{ currentWord.chinese }}</p>
+                <button @click="showMeaning = false" class="text-xs text-slate-400 hover:text-slate-600">隱藏</button>
+              </div>
+            </div>
+
+            <!-- Audio Recording & Playback Comparison Module -->
+            <div class="w-full max-w-md bg-slate-50 p-4 rounded-xl border border-slate-200 text-left space-y-3 mt-4">
+              <div class="flex items-center justify-between text-xs font-bold text-slate-600 border-b pb-2">
+                <span><i class="fa-solid fa-microphone text-rose-500 mr-1"></i> 跟讀錄音與比對</span>
+                <span v-if="isRecording" class="text-rose-600 animate-pulse">● 錄音中...</span>
+              </div>
+              <div v-if="!recordingSupported" class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">
+                <i class="fa-solid fa-triangle-exclamation mr-1"></i>此瀏覽器（或 App 內建瀏覽器）不支援錄音功能，建議改用手機內建的 Safari／Chrome 開啟本頁面，或改用電腦瀏覽器。
+              </div>
+              <div v-else class="flex items-center justify-around gap-2">
+                <button v-if="!isRecording" @click="startRecording" class="bg-rose-500 hover:bg-rose-600 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center">
+                  <i class="fa-solid fa-circle mr-1"></i> 開始錄音
+                </button>
+                <button v-else @click="stopRecording" class="bg-slate-700 hover:bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center">
+                  <i class="fa-solid fa-square mr-1"></i> 停止錄音
+                </button>
+
+                <button v-if="userAudioUrl" @click="playUserAudio" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center">
+                  <i class="fa-solid fa-play mr-1"></i> 播放錄音
+                </button>
+
+                <button v-if="userAudioUrl" @click="compareAudio(currentWord.reading)" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center">
+                  <i class="fa-solid fa-arrows-split-up-and-left mr-1"></i> 雙音順序比對
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Navigation Controls -->
+          <div class="bg-slate-100 p-4 flex items-center justify-between border-t border-slate-200">
+            <button @click="prevWord" :disabled="currentWordIndex === 0" class="px-4 py-2 bg-white rounded-lg border border-slate-300 font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+              <i class="fa-solid fa-chevron-left mr-1"></i> 上一個
+            </button>
+            <button @click="randomWord" class="px-3 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition text-xs font-bold">
+              <i class="fa-solid fa-shuffle mr-1"></i> 隨機抽卡
+            </button>
+            <button @click="nextWord" :disabled="currentWordIndex === activeWordList.length - 1" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition">
+              下一個 <i class="fa-solid fa-chevron-right ml-1"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 4. CONTINUOUS AUDIO PLAYBACK MODE ================= -->
+      <section v-if="currentView === 'continuous'" class="space-y-6 max-w-2xl mx-auto">
+        <div class="flex items-center justify-between">
+          <button @click="stopContinuousPlay(); currentView = 'lessons'" class="text-slate-600 hover:text-indigo-600 text-sm font-medium">
+            <i class="fa-solid fa-arrow-left mr-1"></i> 結束播放
+          </button>
+          <span class="text-sm text-slate-500">課別連續朗讀模式</span>
+        </div>
+
+        <div class="bg-white rounded-2xl p-8 border border-slate-200 shadow-xl text-center space-y-6">
+          <div class="inline-block p-4 bg-indigo-100 text-indigo-700 rounded-full text-3xl">
+            <i class="fa-solid fa-headphones animate-bounce"></i>
+          </div>
+
+          <h3 class="text-2xl font-bold text-slate-800">
+            {{ selectedLessonFilter === 0 ? '全部課別' : '第 ' + selectedLessonFilter + ' 課' }} 連續播放
+          </h3>
+
+          <div v-if="activeWordList[continuousIndex]" class="bg-indigo-50 p-6 rounded-xl border border-indigo-100 space-y-3">
+            <p class="text-xs font-bold text-indigo-500">進度: {{ continuousIndex + 1 }} / {{ activeWordList.length }}</p>
+            <p class="text-indigo-600 text-xl font-medium">{{ activeWordList[continuousIndex].reading }}</p>
+            <p class="japanese-text text-4xl font-extrabold text-slate-900">{{ activeWordList[continuousIndex].word }}</p>
+            <p class="text-emerald-700 font-bold text-xl">{{ activeWordList[continuousIndex].chinese }}</p>
+          </div>
+
+          <!-- Controls -->
+          <div class="flex items-center justify-center space-x-4 pt-4">
+            <button @click="isPlayingContinuous ? pauseContinuousPlay() : resumeContinuousPlay()" class="w-16 h-16 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg text-2xl flex items-center justify-center transition">
+              <i class="fa-solid" :class="isPlayingContinuous ? 'fa-pause' : 'fa-play'"></i>
+            </button>
+            <button @click="stopContinuousPlay()" class="w-12 h-12 bg-rose-100 text-rose-700 hover:bg-rose-200 rounded-full text-lg flex items-center justify-center transition">
+              <i class="fa-solid fa-stop"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 5. INTERACTIVE QUIZ ENGINE ================= -->
+      <section v-if="currentView === 'quiz'" class="space-y-6 max-w-3xl mx-auto">
+        <!-- Quiz Header Bar -->
+        <div class="flex items-center justify-between border-b pb-3">
+          <button @click="confirmExitQuiz" class="text-slate-600 hover:text-rose-600 text-sm font-medium">
+            <i class="fa-solid fa-xmark mr-1"></i> 放棄測驗
+          </button>
+          <div class="text-sm font-bold text-slate-700">
+            {{ getQuizTitle(activeQuizMode) }} (第 {{ quizCurrentStep + 1 }} / {{ quizTotalSteps }} 題)
+          </div>
+          <div class="text-xs text-slate-500">
+            得分：<span class="font-bold text-emerald-600 text-base">{{ quizScore }}</span>
+          </div>
+        </div>
+
+        <!-- Quiz Progress Bar -->
+        <div class="w-full bg-slate-200 rounded-full h-2">
+          <div class="bg-emerald-500 h-2 rounded-full transition-all duration-300" :style="{ width: ((quizCurrentStep + 1) / quizTotalSteps * 100) + '%' }"></div>
+        </div>
+
+        <!-- Quiz Body Card -->
+        <div v-if="currentQuizQuestion" class="bg-white rounded-2xl border border-slate-200 shadow-xl p-6 md:p-8 space-y-6">
+          
+          <!-- MODE 1: 聽音選字 -->
+          <div v-if="activeQuizMode === 'listen_select'" class="text-center space-y-4">
+            <p class="text-slate-500 text-sm">請聽發音並選出正確的日語單字：</p>
+            <button @click="speakWord(currentQuizQuestion.target.reading)" aria-label="播放題目發音" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full p-5 shadow-lg mx-auto block hover:scale-105 transition">
+              <i class="fa-solid fa-volume-high text-2xl"></i>
+            </button>
+            <p class="text-xs text-slate-400">（點擊按鈕重播發音）</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-4">
+              <button v-for="(opt, idx) in currentQuizQuestion.options" :key="idx"
+                      @click="selectQuizOption(opt)"
+                      :disabled="quizAnswered"
+                      :class="getOptionClass(opt)"
+                      class="p-4 rounded-xl border font-bold text-lg text-slate-800 transition text-left flex items-center justify-between">
+                <span>{{ opt.word }} <span class="text-sm text-slate-500 font-normal">({{ opt.reading }})</span></span>
+                <i v-if="quizAnswered && opt === currentQuizQuestion.target" class="fa-solid fa-circle-check text-emerald-600"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- MODE 2: 看單字選中文 -->
+          <div v-if="activeQuizMode === 'word_to_cn'" class="text-center space-y-4">
+            <p class="text-slate-500 text-sm">請選出此單字的中文意思：</p>
+            <div class="japanese-text text-4xl font-extrabold text-slate-900 py-2">
+              {{ currentQuizQuestion.target.word }}
+              <span class="block text-lg text-indigo-600 font-normal mt-1">({{ currentQuizQuestion.target.reading }})</span>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+              <button v-for="(opt, idx) in currentQuizQuestion.options" :key="idx"
+                      @click="selectQuizOption(opt)"
+                      :disabled="quizAnswered"
+                      :class="getOptionClass(opt)"
+                      class="p-4 rounded-xl border font-bold text-base text-slate-800 transition text-left flex items-center justify-between">
+                <span>{{ opt.chinese }}</span>
+                <i v-if="quizAnswered && opt === currentQuizQuestion.target" class="fa-solid fa-circle-check text-emerald-600"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- MODE 3: 看中文選單字 -->
+          <div v-if="activeQuizMode === 'cn_to_word'" class="text-center space-y-4">
+            <p class="text-slate-500 text-sm">請選出對應的日語單字：</p>
+            <div class="text-3xl font-extrabold text-emerald-700 py-2">
+              {{ currentQuizQuestion.target.chinese }}
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+              <button v-for="(opt, idx) in currentQuizQuestion.options" :key="idx"
+                      @click="selectQuizOption(opt)"
+                      :disabled="quizAnswered"
+                      :class="getOptionClass(opt)"
+                      class="p-4 rounded-xl border font-bold text-lg text-slate-800 transition text-left flex items-center justify-between">
+                <span>{{ opt.word }} <span class="text-sm text-slate-500 font-normal">({{ opt.reading }})</span></span>
+                <i v-if="quizAnswered && opt === currentQuizQuestion.target" class="fa-solid fa-circle-check text-emerald-600"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- MODE 4: 看漢字選讀音 -->
+          <div v-if="activeQuizMode === 'kanji_to_reading'" class="text-center space-y-4">
+            <p class="text-slate-500 text-sm">請選出正確的日語讀音（假名）：</p>
+            <div class="japanese-text text-4xl font-extrabold text-slate-900 py-2">
+              {{ currentQuizQuestion.target.word }}
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+              <button v-for="(opt, idx) in currentQuizQuestion.options" :key="idx"
+                      @click="selectQuizOption(opt)"
+                      :disabled="quizAnswered"
+                      :class="getOptionClass(opt)"
+                      class="p-4 rounded-xl border font-bold text-lg text-indigo-700 transition text-left flex items-center justify-between">
+                <span>{{ opt.reading }}</span>
+                <i v-if="quizAnswered && opt === currentQuizQuestion.target" class="fa-solid fa-circle-check text-emerald-600"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- MODE 5: 看讀音選漢字 -->
+          <div v-if="activeQuizMode === 'reading_to_kanji'" class="text-center space-y-4">
+            <p class="text-slate-500 text-sm">請選出此讀音對應的漢字／單字：</p>
+            <div class="text-3xl font-extrabold text-indigo-700 py-2">
+              {{ currentQuizQuestion.target.reading }}
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+              <button v-for="(opt, idx) in currentQuizQuestion.options" :key="idx"
+                      @click="selectQuizOption(opt)"
+                      :disabled="quizAnswered"
+                      :class="getOptionClass(opt)"
+                      class="p-4 rounded-xl border font-bold text-lg text-slate-800 transition text-left flex items-center justify-between">
+                <span>{{ opt.word }}</span>
+                <i v-if="quizAnswered && opt === currentQuizQuestion.target" class="fa-solid fa-circle-check text-emerald-600"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- MODE 6: 假名輸入 -->
+          <div v-if="activeQuizMode === 'kana_input'" class="space-y-4 text-center">
+            <p class="text-slate-500 text-sm">請輸入該單字的【平假名／片假名】讀音：</p>
+            <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 space-y-1">
+              <p class="japanese-text text-3xl font-bold text-slate-900">{{ currentQuizQuestion.target.word }}</p>
+              <p class="text-sm font-semibold text-emerald-700">（{{ currentQuizQuestion.target.chinese }}）</p>
+            </div>
+
+            <form @submit.prevent="submitKanaInput" class="space-y-3">
+              <input type="text" v-model="userKanaInput" :disabled="quizAnswered" placeholder="請在此輸入日語讀音..." class="w-full p-3 border border-slate-300 rounded-xl text-center text-lg font-bold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+              <button type="submit" v-if="!quizAnswered" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow transition">
+                送出答案
+              </button>
+            </form>
+          </div>
+
+          <!-- MODE 7: 單字拼寫 -->
+          <div v-if="activeQuizMode === 'spelling'" class="space-y-4 text-center">
+            <p class="text-slate-500 text-sm">請依照正確順序組裝出該單字或讀音：</p>
+            <div class="bg-slate-50 p-4 rounded-xl border space-y-1">
+              <p class="text-xl font-bold text-emerald-700">{{ currentQuizQuestion.target.chinese }}</p>
+              <p class="text-xs text-slate-400">目標：{{ currentQuizQuestion.target.word }}</p>
+            </div>
+
+            <!-- Current Assembled String -->
+            <div class="min-h-[50px] p-3 border-2 border-dashed border-indigo-300 rounded-xl bg-indigo-50/50 flex flex-wrap gap-2 justify-center items-center">
+              <span v-for="(char, cIdx) in userSpellingList" :key="cIdx" 
+                    @click="removeSpellingChar(cIdx)"
+                    class="bg-indigo-600 text-white font-bold text-lg px-3 py-1 rounded-lg shadow cursor-pointer hover:bg-rose-600 transition">
+                {{ char }}
+              </span>
+            </div>
+
+            <!-- Char pool choices -->
+            <div class="flex flex-wrap gap-2 justify-center pt-2">
+              <button v-for="(c, pIdx) in currentQuizQuestion.charPool" :key="pIdx"
+                      @click="addSpellingChar(c, pIdx)"
+                      :disabled="quizAnswered || c.used"
+                      class="bg-white border border-slate-300 font-bold text-lg px-3.5 py-1.5 rounded-lg shadow-sm hover:bg-indigo-50 disabled:opacity-30 disabled:cursor-not-allowed">
+                {{ c.char }}
+              </button>
+            </div>
+
+            <div v-if="!quizAnswered" class="pt-2">
+              <button @click="submitSpelling" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition">
+                確認拼寫答案
+              </button>
+            </div>
+          </div>
+
+          <!-- MODE 8: 配對遊戲 -->
+          <div v-if="activeQuizMode === 'matching'" class="space-y-4">
+            <p class="text-slate-500 text-sm text-center">請點選左側單字與右側對應的意思進行連線配對：</p>
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Left side: Words -->
+              <div class="space-y-2">
+                <button v-for="item in currentQuizQuestion.leftList" :key="item.id"
+                        @click="selectMatchLeft(item)"
+                        :disabled="item.matched"
+                        :class="getMatchLeftClass(item)"
+                        class="w-full p-3 border rounded-xl font-bold text-sm text-left transition">
+                  {{ item.word }}
+                </button>
+              </div>
+              <!-- Right side: Chinese -->
+              <div class="space-y-2">
+                <button v-for="item in currentQuizQuestion.rightList" :key="item.id"
+                        @click="selectMatchRight(item)"
+                        :disabled="item.matched"
+                        :class="getMatchRightClass(item)"
+                        class="w-full p-3 border rounded-xl font-bold text-sm text-left transition">
+                  {{ item.chinese }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODE 9: 記憶翻牌 -->
+          <div v-if="activeQuizMode === 'memory_flip'" class="space-y-4">
+            <p class="text-slate-500 text-sm text-center">翻開卡片，找出配對的【日語單字】與【中文意思】：</p>
+            <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
+              <div v-for="(card, cardIdx) in currentQuizQuestion.cards" :key="cardIdx"
+                   @click="flipMemoryCard(card)"
+                   class="h-24 rounded-xl border border-slate-300 shadow cursor-pointer flex items-center justify-center p-2 text-center transition-all duration-300 select-none"
+                   :class="card.flipped || card.matched ? 'bg-indigo-600 text-white font-bold' : 'bg-slate-100 hover:bg-slate-200 text-slate-400'">
+                <span v-if="card.flipped || card.matched" class="text-sm">
+                  {{ card.content }}
+                </span>
+                <i v-else class="fa-solid fa-question text-xl"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Instant Feedback Prompt -->
+          <div v-if="quizAnswered" class="p-4 rounded-xl border flex items-center justify-between"
+               :class="quizLastCorrect ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'">
+            <div class="flex items-center space-x-3">
+              <i class="text-2xl" :class="quizLastCorrect ? 'fa-solid fa-circle-check text-emerald-600' : 'fa-solid fa-circle-xmark text-rose-600'"></i>
+              <div>
+                <p class="font-bold">{{ quizLastCorrect ? '答對了！非常棒！' : '答錯囉！' }}</p>
+                <p class="text-xs mt-0.5" v-if="currentQuizQuestion.target">
+                  正確答案：<span class="font-bold">{{ currentQuizQuestion.target.word }}</span> ({{ currentQuizQuestion.target.reading }}) - {{ currentQuizQuestion.target.chinese }}
+                </p>
+              </div>
+            </div>
+            <button @click="nextQuizQuestion" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg text-sm shadow transition">
+              下一題 <i class="fa-solid fa-arrow-right ml-1"></i>
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ================= 6. QUIZ RESULTS VIEW ================= -->
+      <section v-if="currentView === 'quiz_result'" class="space-y-6 max-w-2xl mx-auto text-center">
+        <div class="bg-white rounded-2xl p-8 border border-slate-200 shadow-xl space-y-6">
+          <div class="inline-block p-4 bg-emerald-100 text-emerald-600 rounded-full text-4xl">
+            <i class="fa-solid fa-trophy"></i>
+          </div>
+
+          <h2 class="text-3xl font-extrabold text-slate-800">測驗完成！</h2>
+          <p class="text-slate-500 text-sm">成果結算紀錄已自動儲存於本機</p>
+
+          <div class="grid grid-cols-2 gap-4 py-4 border-y border-slate-100">
+            <div>
+              <p class="text-xs text-slate-400">總題數</p>
+              <p class="text-2xl font-bold text-slate-800">{{ quizTotalSteps }} 題</p>
+            </div>
+            <div>
+              <p class="text-xs text-slate-400">測驗得分</p>
+              <p class="text-3xl font-extrabold text-emerald-600">{{ quizScore }} 分</p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-3 justify-center pt-2">
+            <button @click="currentView = 'lessons'" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-5 py-2.5 rounded-xl transition">
+              <i class="fa-solid fa-list mr-1"></i> 選擇其他測驗
+            </button>
+            <button v-if="mistakes.length > 0" @click="startMistakePractice" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-5 py-2.5 rounded-xl shadow transition">
+              <i class="fa-solid fa-rotate-right mr-1"></i> 錯題即刻重練 ({{ mistakes.length }})
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 7. MISTAKE NOTEBOOK (錯題本) ================= -->
+      <section v-if="currentView === 'mistakes'" class="space-y-6">
+        <div class="flex items-center justify-between border-b pb-4">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-800 flex items-center">
+              <i class="fa-solid fa-circle-exclamation text-rose-500 mr-2"></i> 錯題本紀錄
+            </h2>
+            <p class="text-sm text-slate-500">自動蒐集測驗中答錯的單字，強化弱點複習</p>
+          </div>
+          <div class="space-x-2">
+            <button v-if="mistakes.length > 0" @click="startMistakePractice" class="bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition">
+              <i class="fa-solid fa-play mr-1"></i> 錯題重練測驗
+            </button>
+            <button v-if="mistakes.length > 0" @click="clearMistakes" class="text-xs text-slate-500 hover:text-rose-600 underline">
+              清空錯題
+            </button>
+          </div>
+        </div>
+
+        <div v-if="mistakes.length === 0" class="bg-white rounded-xl p-12 text-center border border-slate-200 space-y-3">
+          <i class="fa-solid fa-face-smile text-emerald-500 text-5xl"></i>
+          <p class="text-slate-700 font-bold">目前沒有任何錯題！</p>
+          <p class="text-slate-400 text-xs">繼續保持，在測驗中獲得好成績吧。</p>
+        </div>
+
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div v-for="word in mistakes" :key="word.id" class="bg-white p-4 rounded-xl border border-rose-200 shadow-sm flex items-center justify-between">
+            <div>
+              <span class="text-[10px] bg-rose-100 text-rose-700 font-bold px-2 py-0.5 rounded-full">第 {{ word.lesson }} 課</span>
+              <p class="text-indigo-600 text-xs font-semibold mt-1">{{ word.reading }}</p>
+              <p class="japanese-text text-xl font-bold text-slate-900">{{ word.word }}</p>
+              <p class="text-emerald-700 text-sm font-medium">{{ word.chinese }}</p>
+            </div>
+            <div class="flex flex-col space-y-2">
+              <button @click="speakWord(word.reading)" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 p-2 rounded-lg text-sm transition">
+                <i class="fa-solid fa-volume-high"></i>
+              </button>
+              <button @click="removeMistake(word.id)" class="text-slate-300 hover:text-rose-600 p-2 text-sm transition">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 8. FAVORITES VIEW (收藏單字) ================= -->
+      <section v-if="currentView === 'favorites'" class="space-y-6">
+        <div class="flex items-center justify-between border-b pb-4">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-800 flex items-center">
+              <i class="fa-solid fa-star text-amber-400 mr-2"></i> 收藏單字清單
+            </h2>
+            <p class="text-sm text-slate-500">共 {{ favorites.length }} 個收藏項目</p>
+          </div>
+        </div>
+
+        <div v-if="favorites.length === 0" class="bg-white rounded-xl p-12 text-center border border-slate-200 space-y-3">
+          <i class="fa-regular fa-star text-slate-300 text-5xl"></i>
+          <p class="text-slate-700 font-bold">尚未收藏任何單字</p>
+          <p class="text-slate-400 text-xs">在單字學習卡中點擊星號即可收藏難記的單字。</p>
+        </div>
+
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div v-for="word in favorites" :key="word.id" class="bg-white p-4 rounded-xl border border-amber-200 shadow-sm flex items-center justify-between">
+            <div>
+              <span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">第 {{ word.lesson }} 課</span>
+              <p class="text-indigo-600 text-xs font-semibold mt-1">{{ word.reading }}</p>
+              <p class="japanese-text text-xl font-bold text-slate-900">{{ word.word }}</p>
+              <p class="text-emerald-700 text-sm font-medium">{{ word.chinese }}</p>
+            </div>
+            <div class="flex flex-col space-y-2">
+              <button @click="speakWord(word.reading)" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 p-2 rounded-lg text-sm transition">
+                <i class="fa-solid fa-volume-high"></i>
+              </button>
+              <button @click="toggleFavorite(word)" class="text-amber-400 hover:text-slate-300 p-2 text-sm transition">
+                <i class="fa-solid fa-star"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 9. LEARNING STATS & PROGRESS ================= -->
+      <section v-if="currentView === 'stats'" class="space-y-6 max-w-4xl mx-auto">
+        <div class="border-b pb-4">
+          <h2 class="text-2xl font-bold text-slate-800">學習進度與統計紀錄</h2>
+          <p class="text-sm text-slate-500">本機自主學習歷程數據摘要</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="bg-white p-5 rounded-xl border border-slate-200 text-center shadow-sm">
+            <p class="text-xs text-slate-400 font-bold uppercase">總收錄單字</p>
+            <p class="text-3xl font-extrabold text-indigo-600 mt-1">301 筆</p>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 text-center shadow-sm">
+            <p class="text-xs text-slate-400 font-bold uppercase">已收藏標記</p>
+            <p class="text-3xl font-extrabold text-amber-500 mt-1">{{ favorites.length }} 筆</p>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 text-center shadow-sm">
+            <p class="text-xs text-slate-400 font-bold uppercase">待復習錯題</p>
+            <p class="text-3xl font-extrabold text-rose-500 mt-1">{{ mistakes.length }} 筆</p>
+          </div>
+        </div>
+
+        <!-- Lesson breakdown table -->
+        <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+          <div class="p-4 bg-slate-50 border-b font-bold text-slate-800">各課單字量統計與範疇</div>
+          <div class="divide-y divide-slate-100">
+            <div v-for="l in 5" :key="l" class="p-4 flex items-center justify-between hover:bg-slate-50">
+              <div>
+                <p class="font-bold text-slate-800">第 {{ l+4 }} 課</p>
+                <p class="text-xs text-slate-500">單字數量：{{ getLessonWords(l+4).length }} 個</p>
+              </div>
+              <button @click="startLessonStudy(l+4)" class="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold px-3 py-1.5 rounded-lg border border-indigo-200 transition">
+                進入學習
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 10. TEACHER DATA MANAGEMENT ================= -->
+      <section v-if="currentView === 'teacher'" class="space-y-6">
+        <div class="flex items-center justify-between border-b pb-4">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-800 flex items-center">
+              <i class="fa-solid fa-user-gear text-indigo-600 mr-2"></i> 教師資料管理介面
+            </h2>
+            <p class="text-sm text-slate-500">即時檢閱第5課至第9課單字庫，支援匯出 JSON 與過濾搜尋</p>
+          </div>
+          <div class="space-x-2">
+            <button @click="exportVocabularyData" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-2 rounded-lg shadow transition">
+              <i class="fa-solid fa-file-export mr-1"></i> 匯出完整單字 JSON
+            </button>
+          </div>
+        </div>
+
+        <!-- Search & Filter Controls -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 flex flex-wrap gap-4 items-center justify-between">
+          <div class="flex items-center space-x-2 flex-1 min-w-[240px]">
+            <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+            <input type="text" v-model="teacherSearchQuery" placeholder="搜尋單字、讀音或中文..." class="w-full text-sm border-none focus:outline-none focus:ring-0">
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="text-xs text-slate-500 font-medium">篩選課別：</span>
+            <select v-model="teacherLessonFilter" class="text-xs border border-slate-300 rounded-lg p-1.5 focus:outline-none">
+              <option :value="0">全部課別 (301筆)</option>
+              <option v-for="l in 5" :key="l" :value="l+4">第 {{ l+4 }} 課</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-100 text-slate-700 font-bold text-xs uppercase border-b">
+                <tr>
+                  <th class="p-3 w-16">課別</th>
+                  <th class="p-3 w-16">編號</th>
+                  <th class="p-3">單字 (漢字)</th>
+                  <th class="p-3">讀音 (假名)</th>
+                  <th class="p-3">中文意思</th>
+                  <th class="p-3 text-center">語音</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr v-for="item in filteredTeacherWords" :key="item.id" class="hover:bg-slate-50">
+                  <td class="p-3 font-semibold text-indigo-700">第 {{ item.lesson }} 課</td>
+                  <td class="p-3 text-slate-400 text-xs">{{ item.num }}</td>
+                  <td class="p-3 japanese-text font-bold text-slate-900 text-base">{{ item.word }}</td>
+                  <td class="p-3 text-indigo-600 font-medium">{{ item.reading }}</td>
+                  <td class="p-3 text-emerald-800 font-medium">{{ item.chinese }}</td>
+                  <td class="p-3 text-center">
+                    <button @click="speakWord(item.reading)" class="text-indigo-600 hover:text-indigo-800 p-1">
+                      <i class="fa-solid fa-volume-high"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Global Footer -->
+    <footer class="bg-slate-800 text-slate-400 py-6 text-center text-xs mt-auto border-t border-slate-700">
+      <div class="max-w-7xl mx-auto px-4 space-y-1">
+        <p class="font-medium text-slate-300">あいうえお順・日本語単語リスニング＆セルフテスト 第5課～第9課 學生自主學習有聲互動系統</p>
+        <p class="text-slate-500">聲明：本系統重音尚未進行核定，完全遵循規範未包含任何東京式重音評分與試題。</p>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    const { createApp, ref, computed, onMounted, watch } = Vue;
+
+    createApp({
+      setup() {
+        // --- 1. FULL VOCABULARY DATASET (Lessons 5 to 9, exactly 301 items) ---
+        const rawVocabDataRaw = [
+          // Lesson 5 (48 items)
+          { lesson: 5, num: '01', word: '鈴木健志', reading: 'すずきけんじ', chinese: '人名' },
+          { lesson: 5, num: '02', word: '(健志)君', reading: '(けんじ)くん', chinese: '男孩名字後的敬稱' },
+          { lesson: 5, num: '03', word: '冷蔵庫', reading: 'れいぞうこ', chinese: '冰箱' },
+          { lesson: 5, num: '04', word: '中', reading: 'なか', chinese: '裡面' },
+          { lesson: 5, num: '05', word: 'ある', reading: 'ある', chinese: '有；在（無生命）' },
+          { lesson: 5, num: '06', word: 'テーブル', reading: 'テーブル', chinese: '桌子' },
+          { lesson: 5, num: '07', word: '上', reading: 'うえ', chinese: '上面' },
+          { lesson: 5, num: '08', word: '(お)菓子', reading: '(お)かし', chinese: '點心' },
+          { lesson: 5, num: '09', word: 'お母さん', reading: 'おかあさん', chinese: '別人的母親' },
+          { lesson: 5, num: '10', word: '(お母さん)より', reading: '(おかあさん)より', chinese: '（母親）留' },
+          { lesson: 5, num: '11', word: '下', reading: 'した', chinese: '下面' },
+          { lesson: 5, num: '12', word: '前', reading: 'まえ', chinese: '前面' },
+          { lesson: 5, num: '13', word: '後ろ', reading: 'うしろ', chinese: '後面' },
+          { lesson: 5, num: '14', word: '左', reading: 'ひだり', chinese: '左邊' },
+          { lesson: 5, num: '15', word: '右', reading: 'みぎ', chinese: '右邊' },
+          { lesson: 5, num: '16', word: '隣', reading: 'となり', chinese: '隔壁；旁邊' },
+          { lesson: 5, num: '17', word: 'スーパー', reading: 'スーパー', chinese: '超級市場' },
+          { lesson: 5, num: '18', word: 'コンビニ', reading: 'コンビニ', chinese: '便利商店' },
+          { lesson: 5, num: '19', word: '病院', reading: 'びょういん', chinese: '醫院' },
+          { lesson: 5, num: '20', word: '駅', reading: 'えき', chinese: '車站' },
+          { lesson: 5, num: '21', word: '(駅の)そば', reading: '(えきの)そば', chinese: '車站旁邊' },
+          { lesson: 5, num: '22', word: 'ケーキ', reading: 'ケーキ', chinese: '蛋糕' },
+          { lesson: 5, num: '23', word: '男の子', reading: 'おとこのこ', chinese: '男孩' },
+          { lesson: 5, num: '24', word: 'いる', reading: 'いる', chinese: '有；在（有生命）' },
+          { lesson: 5, num: '25', word: '箱', reading: 'はこ', chinese: '盒子' },
+          { lesson: 5, num: '26', word: '(お)皿', reading: '(お)さら', chinese: '盤子' },
+          { lesson: 5, num: '27', word: 'フォーク', reading: 'フォーク', chinese: '叉子' },
+          { lesson: 5, num: '28', word: 'ナイフ', reading: 'ナイフ', chinese: '刀' },
+          { lesson: 5, num: '29', word: '公園', reading: 'こうえん', chinese: '公園' },
+          { lesson: 5, num: '30', word: '新宿駅', reading: 'しんじゅくえき', chinese: '新宿車站' },
+          { lesson: 5, num: '31', word: '鈴木伸', reading: 'すずきしん', chinese: '人名' },
+          { lesson: 5, num: '32', word: '(伸)ちゃん', reading: '(しん)ちゃん', chinese: '親暱稱呼' },
+          { lesson: 5, num: '33', word: 'まんが', reading: 'まんが', chinese: '漫畫' },
+          { lesson: 5, num: '34', word: '(2)階', reading: '(に)かい', chinese: '二樓' },
+          { lesson: 5, num: '35', word: '(お)手洗い', reading: '(お)てあらい', chinese: '洗手間' },
+          { lesson: 5, num: '36', word: '店員', reading: 'てんいん', chinese: '店員' },
+          { lesson: 5, num: '37', word: 'あそこ', reading: 'あそこ', chinese: '那裡' },
+          { lesson: 5, num: '38', word: '洗面所', reading: 'せんめんじょ', chinese: '盥洗室' },
+          { lesson: 5, num: '39', word: '男の人', reading: 'おとこのひと', chinese: '男人' },
+          { lesson: 5, num: '40', word: 'ここ', reading: 'ここ', chinese: '這裡' },
+          { lesson: 5, num: '41', word: '電話', reading: 'でんわ', chinese: '電話' },
+          { lesson: 5, num: '42', word: '喫茶店', reading: 'きっさてん', chinese: '咖啡店' },
+          { lesson: 5, num: '43', word: 'ホテル', reading: 'ホテル', chinese: '飯店' },
+          { lesson: 5, num: '44', word: '本屋', reading: 'ほんや', chinese: '書店' },
+          { lesson: 5, num: '45', word: '地下', reading: 'ちか', chinese: '地下' },
+          { lesson: 5, num: '46', word: '化粧品', reading: 'けしょうひん', chinese: '化妝品' },
+          { lesson: 5, num: '47', word: '果物', reading: 'くだもの', chinese: '水果' },
+          { lesson: 5, num: '48', word: 'スカート', reading: 'スカート', chinese: '裙子' },
+
+          // Lesson 6 (41 items)
+          { lesson: 6, num: '01', word: '鈴木幸子', reading: 'すずきさちこ', chinese: '人名' },
+          { lesson: 6, num: '02', word: 'みなさん', reading: 'みなさん', chinese: '各位' },
+          { lesson: 6, num: '03', word: 'みんな', reading: 'みんな', chinese: '全部；大家' },
+          { lesson: 6, num: '04', word: 'おいしい', reading: 'おいしい', chinese: '好吃的' },
+          { lesson: 6, num: '05', word: 'こちら', reading: 'こちら', chinese: '這位' },
+          { lesson: 6, num: '06', word: '友達', reading: 'ともだち', chinese: '朋友' },
+          { lesson: 6, num: '07', word: '料理', reading: 'りょうり', chinese: '料理' },
+          { lesson: 6, num: '08', word: '料理(を)する', reading: 'りょうり(を)する', chinese: '做菜' },
+          { lesson: 6, num: '09', word: 'あまり～ない', reading: 'あまり～ない', chinese: '不太～' },
+          { lesson: 6, num: '10', word: 'よく', reading: 'よく', chinese: '經常' },
+          { lesson: 6, num: '11', word: 'ぜんぜん', reading: 'ぜんぜん', chinese: '完全不～' },
+          { lesson: 6, num: '12', word: 'ときどき', reading: 'ときどき', chinese: '有時' },
+          { lesson: 6, num: '13', word: 'ワイン', reading: 'ワイン', chinese: '葡萄酒' },
+          { lesson: 6, num: '14', word: 'スポーツ', reading: 'スポーツ', chinese: '運動' },
+          { lesson: 6, num: '15', word: 'スポーツ(を)する', reading: 'スポーツ(を)する', chinese: '做運動' },
+          { lesson: 6, num: '16', word: 'いつも', reading: 'いつも', chinese: '總是' },
+          { lesson: 6, num: '17', word: '買い物', reading: 'かいもの', chinese: '購物' },
+          { lesson: 6, num: '18', word: '買い物(を)する', reading: 'かいもの(を)する', chinese: '購物' },
+          { lesson: 6, num: '19', word: '駅前', reading: 'えきまえ', chinese: '車站前' },
+          { lesson: 6, num: '20', word: '映画館', reading: 'えいがかん', chinese: '電影院' },
+          { lesson: 6, num: '21', word: 'どんな', reading: 'どんな', chinese: '什麼樣的' },
+          { lesson: 6, num: '22', word: '好き', reading: 'すき', chinese: '喜歡的' },
+          { lesson: 6, num: '23', word: 'コメディー', reading: 'コメディー', chinese: '喜劇' },
+          { lesson: 6, num: '24', word: 'ホラー', reading: 'ホラー', chinese: '恐怖片' },
+          { lesson: 6, num: '25', word: '和食', reading: 'わしょく', chinese: '日本菜' },
+          { lesson: 6, num: '26', word: '大好き', reading: 'だいすき', chinese: '非常喜歡' },
+          { lesson: 6, num: '27', word: 'クラシック', reading: 'クラシック', chinese: '古典樂' },
+          { lesson: 6, num: '28', word: 'ロック', reading: 'ロック', chinese: '搖滾樂' },
+          { lesson: 6, num: '29', word: '納豆', reading: 'なっとう', chinese: '納豆' },
+          { lesson: 6, num: '30', word: '嫌い', reading: 'きらい', chinese: '討厭的' },
+          { lesson: 6, num: '31', word: '天ぷら', reading: 'てんぷら', chinese: '天婦羅' },
+          { lesson: 6, num: '32', word: 'バス', reading: 'バス', chinese: '公車' },
+          { lesson: 6, num: '33', word: '池袋', reading: 'いけぶくろ', chinese: '池袋' },
+          { lesson: 6, num: '34', word: '国', reading: 'くに', chinese: '國家' },
+          { lesson: 6, num: '35', word: '冬休み', reading: 'ふゆやすみ', chinese: '寒假' },
+          { lesson: 6, num: '36', word: '外', reading: 'そと', chinese: '外面' },
+          { lesson: 6, num: '37', word: 'ニュース', reading: 'ニュース', chinese: '新聞' },
+          { lesson: 6, num: '38', word: 'ドラマ', reading: 'ドラマ', chinese: '戲劇' },
+          { lesson: 6, num: '39', word: '相撲', reading: 'すもう', chinese: '相撲' },
+          { lesson: 6, num: '40', word: '美術館', reading: 'びじゅつかん', chinese: '美術館' },
+          { lesson: 6, num: '41', word: '(絵を)かく', reading: '(えを)かく', chinese: '畫畫' },
+
+          // Lesson 7 (70 items)
+          { lesson: 7, num: '01', word: '財布', reading: 'さいふ', chinese: '錢包' },
+          { lesson: 7, num: '02', word: '(財布を)落とす', reading: '(さいふを)おとす', chinese: '弄丟錢包' },
+          { lesson: 7, num: '03', word: '会館', reading: 'かいかん', chinese: '會館' },
+          { lesson: 7, num: '04', word: '交番', reading: 'こうばん', chinese: '派出所' },
+          { lesson: 7, num: '05', word: '警察官', reading: 'けいさつかん', chinese: '警察' },
+          { lesson: 7, num: '06', word: 'わかる', reading: 'わかる', chinese: '了解' },
+          { lesson: 7, num: '07', word: 'その時', reading: 'そのとき', chinese: '那時' },
+          { lesson: 7, num: '08', word: '切手', reading: 'きって', chinese: '郵票' },
+          { lesson: 7, num: '09', word: '買う', reading: 'かう', chinese: '買' },
+          { lesson: 7, num: '10', word: 'それから', reading: 'それから', chinese: '然後' },
+          { lesson: 7, num: '11', word: '捜す', reading: 'さがす', chinese: '尋找' },
+          { lesson: 7, num: '12', word: 'でも', reading: 'でも', chinese: '不過' },
+          { lesson: 7, num: '13', word: 'おととい', reading: 'おととい', chinese: '前天' },
+          { lesson: 7, num: '14', word: '明日', reading: 'あした', chinese: '明天' },
+          { lesson: 7, num: '15', word: 'あさって', reading: 'あさって', chinese: '後天' },
+          { lesson: 7, num: '16', word: '昼', reading: 'ひる', chinese: '白天；中午' },
+          { lesson: 7, num: '17', word: '夕方', reading: 'ゆうがた', chinese: '傍晚' },
+          { lesson: 7, num: '18', word: 'ゆうべ', reading: 'ゆうべ', chinese: '昨晚' },
+          { lesson: 7, num: '19', word: '今朝', reading: 'けさ', chinese: '今天早上' },
+          { lesson: 7, num: '20', word: '今夜', reading: 'こんや', chinese: '今夜' },
+          { lesson: 7, num: '21', word: '今晩', reading: 'こんばん', chinese: '今晚' },
+          { lesson: 7, num: '22', word: '先週', reading: 'せんしゅう', chinese: '上週' },
+          { lesson: 7, num: '23', word: '今週', reading: 'こんしゅう', chinese: '本週' },
+          { lesson: 7, num: '24', word: '来週', reading: 'らいしゅう', chinese: '下週' },
+          { lesson: 7, num: '25', word: '先月', reading: 'せんげつ', chinese: '上個月' },
+          { lesson: 7, num: '26', word: '今月', reading: 'こんげつ', chinese: '本月' },
+          { lesson: 7, num: '27', word: '来月', reading: 'らいげつ', chinese: '下個月' },
+          { lesson: 7, num: '28', word: '去年', reading: 'きょねん', chinese: '去年' },
+          { lesson: 7, num: '29', word: '今年', reading: 'ことし', chinese: '今年' },
+          { lesson: 7, num: '30', word: '来年', reading: 'らいねん', chinese: '明年' },
+          { lesson: 7, num: '31', word: 'Tシャツ', reading: 'ティーシャツ', chinese: 'T恤' },
+          { lesson: 7, num: '32', word: '原宿', reading: 'はらじゅく', chinese: '原宿' },
+          { lesson: 7, num: '33', word: 'タイ', reading: 'タイ', chinese: '泰國' },
+          { lesson: 7, num: '34', word: '新宿', reading: 'しんじゅく', chinese: '新宿' },
+          { lesson: 7, num: '35', word: 'そうじ', reading: 'そうじ', chinese: '打掃' },
+          { lesson: 7, num: '36', word: 'そうじ(を)する', reading: 'そうじ(を)する', chinese: '打掃' },
+          { lesson: 7, num: '37', word: 'パン', reading: 'パン', chinese: '麵包' },
+          { lesson: 7, num: '38', word: '洗濯', reading: 'せんたく', chinese: '洗衣服' },
+          { lesson: 7, num: '39', word: '洗濯(を)する', reading: 'せんたく(を)する', chinese: '洗衣服' },
+          { lesson: 7, num: '40', word: '上手', reading: 'じょうず', chinese: '擅長' },
+          { lesson: 7, num: '41', word: '雨', reading: 'あめ', chinese: '雨' },
+          { lesson: 7, num: '42', word: 'ディズニーランド', reading: 'ディズニーランド', chinese: '迪士尼樂園' },
+          { lesson: 7, num: '43', word: '歌', reading: 'うた', chinese: '歌曲' },
+          { lesson: 7, num: '44', word: '野菜', reading: 'やさい', chinese: '蔬菜' },
+          { lesson: 7, num: '45', word: '～ぐらい／くらい', reading: '～ぐらい／くらい', chinese: '大約' },
+          { lesson: 7, num: '46', word: 'キャッシュカード', reading: 'キャッシュカード', chinese: '金融卡' },
+          { lesson: 7, num: '47', word: '(お)金', reading: '(お)かね', chinese: '錢' },
+          { lesson: 7, num: '48', word: 'ほか', reading: 'ほか', chinese: '其他' },
+          { lesson: 7, num: '49', word: '～だけ', reading: '～だけ', chinese: '只有' },
+          { lesson: 7, num: '50', word: 'じゃ', reading: 'じゃ', chinese: '那麼' },
+          { lesson: 7, num: '51', word: 'あなた', reading: 'あなた', chinese: '你' },
+          { lesson: 7, num: '52', word: '住所', reading: 'じゅうしょ', chinese: '地址' },
+          { lesson: 7, num: '53', word: '名前', reading: 'なまえ', chinese: '名字' },
+          { lesson: 7, num: '54', word: '電話番号', reading: 'でんわばんごう', chinese: '電話號碼' },
+          { lesson: 7, num: '55', word: '後', reading: 'あと', chinese: '之後' },
+          { lesson: 7, num: '56', word: '連絡する', reading: 'れんらくする', chinese: '聯絡' },
+          { lesson: 7, num: '57', word: '店', reading: 'みせ', chinese: '店' },
+          { lesson: 7, num: '58', word: '忘れる', reading: 'わすれる', chinese: '忘記' },
+          { lesson: 7, num: '59', word: '駅員', reading: 'えきいん', chinese: '站務員' },
+          { lesson: 7, num: '60', word: '文化病院', reading: 'ぶんかびょういん', chinese: '文化醫院' },
+          { lesson: 7, num: '61', word: '丸い', reading: 'まるい', chinese: '圓形的' },
+          { lesson: 7, num: '62', word: '四角い', reading: 'しかくい', chinese: '四方形的' },
+          { lesson: 7, num: '63', word: '宿題', reading: 'しゅくだい', chinese: '作業' },
+          { lesson: 7, num: '64', word: '作文', reading: 'さくぶん', chinese: '作文' },
+          { lesson: 7, num: '65', word: '家', reading: 'いえ', chinese: '家' },
+          { lesson: 7, num: '66', word: 'だいじょうぶ', reading: 'だいじょうぶ', chinese: '沒關係' },
+          { lesson: 7, num: '67', word: '借りる', reading: 'かりる', chinese: '借入' },
+          { lesson: 7, num: '68', word: '貸す', reading: 'かす', chinese: '借出' },
+          { lesson: 7, num: '69', word: '返す', reading: 'かえす', chinese: '歸還' },
+          { lesson: 7, num: '70', word: 'キム・ヨンス', reading: 'キム・ヨンス', chinese: '人名' },
+
+          // Lesson 8 (75 items)
+          { lesson: 8, num: '01', word: 'ニュースキャスター', reading: 'ニュースキャスター', chinese: '新聞播音員' },
+          { lesson: 8, num: '02', word: '子供の日', reading: 'こどものひ', chinese: '兒童節' },
+          { lesson: 8, num: '03', word: 'ゴールデンウィーク', reading: 'ゴールデンウィーク', chinese: '黃金週' },
+          { lesson: 8, num: '04', word: '終わる', reading: 'おわる', chinese: '結束' },
+          { lesson: 8, num: '05', word: '約', reading: 'やく', chinese: '大約' },
+          { lesson: 8, num: '07', word: '人', reading: 'ひと', chinese: '人' },
+          { lesson: 8, num: '08', word: '帰国する', reading: 'きこくする', chinese: '回國' },
+          { lesson: 8, num: '09', word: '成田空港', reading: 'なりたくうこう', chinese: '成田機場' },
+          { lesson: 8, num: '10', word: '伊藤', reading: 'いとう', chinese: '姓氏' },
+          { lesson: 8, num: '11', word: '記者', reading: 'きしゃ', chinese: '記者' },
+          { lesson: 8, num: '12', word: '報告する', reading: 'ほうこくする', chinese: '報告' },
+          { lesson: 8, num: '13', word: '女の人', reading: 'おんなのひと', chinese: '女人' },
+          { lesson: 8, num: '14', word: 'いらっしゃる', reading: 'いらっしゃる', chinese: '去的敬語' },
+          { lesson: 8, num: '15', word: 'ハワイ', reading: 'ハワイ', chinese: '夏威夷' },
+          { lesson: 8, num: '17', word: '～週間', reading: '～しゅうかん', chinese: '～週' },
+          { lesson: 8, num: '18', word: '旅行', reading: 'りょこう', chinese: '旅行' },
+          { lesson: 8, num: '19', word: 'どう', reading: 'どう', chinese: '怎樣' },
+          { lesson: 8, num: '20', word: '少し', reading: 'すこし', chinese: '稍微' },
+          { lesson: 8, num: '21', word: '疲れる', reading: 'つかれる', chinese: '疲累' },
+          { lesson: 8, num: '22', word: '楽しい', reading: 'たのしい', chinese: '愉快的' },
+          { lesson: 8, num: '23', word: '天気', reading: 'てんき', chinese: '天氣' },
+          { lesson: 8, num: '24', word: '毎日', reading: 'まいにち', chinese: '每天' },
+          { lesson: 8, num: '25', word: 'とても', reading: 'とても', chinese: '很；非常' },
+          { lesson: 8, num: '26', word: 'いい', reading: 'いい', chinese: '好的' },
+          { lesson: 8, num: '27', word: 'ちょっと', reading: 'ちょっと', chinese: '稍微' },
+          { lesson: 8, num: '28', word: 'いつごろ', reading: 'いつごろ', chinese: '何時' },
+          { lesson: 8, num: '29', word: '予約する', reading: 'よやくする', chinese: '預約' },
+          { lesson: 8, num: '30', word: '予約', reading: 'よやく', chinese: '預約' },
+          { lesson: 8, num: '31', word: '～か月', reading: '～かげつ', chinese: '～個月' },
+          { lesson: 8, num: '32', word: '～か月前', reading: '～かげつまえ', chinese: '～個月前' },
+          { lesson: 8, num: '33', word: '東京', reading: 'とうきょう', chinese: '東京' },
+          { lesson: 8, num: '34', word: 'どのぐらい', reading: 'どのぐらい', chinese: '多少' },
+          { lesson: 8, num: '35', word: '半年', reading: 'はんとし', chinese: '半年' },
+          { lesson: 8, num: '36', word: '～時間', reading: '～じかん', chinese: '～小時' },
+          { lesson: 8, num: '37', word: 'パーティー', reading: 'パーティー', chinese: '宴會' },
+          { lesson: 8, num: '38', word: 'にぎやか', reading: 'にぎやか', chinese: '熱鬧的' },
+          { lesson: 8, num: '39', word: '山の上公園', reading: 'やまのうえこうえん', chinese: '山上公園' },
+          { lesson: 8, num: '40', word: 'すし屋', reading: 'すしや', chinese: '壽司店' },
+          { lesson: 8, num: '41', word: 'お(すし)屋さん', reading: 'お(すし)やさん', chinese: '壽司店' },
+          { lesson: 8, num: '42', word: '親切', reading: 'しんせつ', chinese: '親切的' },
+          { lesson: 8, num: '43', word: '海', reading: 'うみ', chinese: '海' },
+          { lesson: 8, num: '44', word: 'ダンス', reading: 'ダンス', chinese: '舞蹈' },
+          { lesson: 8, num: '45', word: 'バスケットボール', reading: 'バスケットボール', chinese: '籃球' },
+          { lesson: 8, num: '46', word: 'バスケットボール(を)する', reading: 'バスケットボール(を)する', chinese: '打籃球' },
+          { lesson: 8, num: '47', word: 'パイナップル', reading: 'パイナップル', chinese: '鳳梨' },
+          { lesson: 8, num: '48', word: '新鮮', reading: 'しんせん', chinese: '新鮮的' },
+          { lesson: 8, num: '49', word: '日光', reading: 'にっこう', chinese: '日光' },
+          { lesson: 8, num: '50', word: '遠い', reading: 'とおい', chinese: '遠的' },
+          { lesson: 8, num: '51', word: '所', reading: 'ところ', chinese: '地方' },
+          { lesson: 8, num: '52', word: 'メニュー', reading: 'メニュー', chinese: '菜單' },
+          { lesson: 8, num: '53', word: '少ない', reading: 'すくない', chinese: '少' },
+          { lesson: 8, num: '54', word: 'アパート', reading: 'アパート', chinese: '公寓' },
+          { lesson: 8, num: '55', word: '近い', reading: 'ちかい', chinese: '近的' },
+          { lesson: 8, num: '56', word: '難しい', reading: 'むずかしい', chinese: '難的' },
+          { lesson: 8, num: '57', word: '全部', reading: 'ぜんぶ', chinese: '全部' },
+          { lesson: 8, num: '58', word: '日本料理', reading: 'にほんりょうり', chinese: '日本料理' },
+          { lesson: 8, num: '59', word: 'さしみ', reading: 'さしみ', chinese: '生魚片' },
+          { lesson: 8, num: '60', word: '前', reading: 'まえ', chinese: '以前' },
+          { lesson: 8, num: '61', word: '今', reading: 'いま', chinese: '現在' },
+          { lesson: 8, num: '62', word: '山', reading: 'やま', chinese: '山' },
+          { lesson: 8, num: '63', word: '日本酒', reading: 'にほんしゅ', chinese: '日本酒' },
+          { lesson: 8, num: '64', word: '食べ物', reading: 'たべもの', chinese: '食物' },
+          { lesson: 8, num: '65', word: '肉', reading: 'にく', chinese: '肉' },
+          { lesson: 8, num: '66', word: '魚', reading: 'さかな', chinese: '魚' },
+          { lesson: 8, num: '67', word: 'たくさん', reading: 'たくさん', chinese: '很多' },
+          { lesson: 8, num: '68', word: '(お)みやげ', reading: '(お)みやげ', chinese: '土產' },
+          { lesson: 8, num: '69', word: 'チョコレート', reading: 'チョコレート', chinese: '巧克力' },
+          { lesson: 8, num: '70', word: '不便', reading: 'ふべん', chinese: '不方便' },
+          { lesson: 8, num: '71', word: '便利', reading: 'べんり', chinese: '方便' },
+          { lesson: 8, num: '72', word: '江ノ島', reading: 'えのしま', chinese: '江之島' },
+          { lesson: 8, num: '73', word: 'ハイビスカス', reading: 'ハイビスカス', chinese: '扶桑花' },
+          { lesson: 8, num: '74', word: '中国', reading: 'ちゅうごく', chinese: '中國' },
+          { lesson: 8, num: '75', word: '上海', reading: 'シャンハイ', chinese: '上海' },
+          { lesson: 8, num: '76', word: '北京', reading: 'ペキン', chinese: '北京' },
+          { lesson: 8, num: '77', word: '教務', reading: 'きょうむ', chinese: '教務' },
+
+          // Lesson 9 (67 items)
+          { lesson: 9, num: '01', word: 'ファッション', reading: 'ファッション', chinese: '時尚' },
+          { lesson: 9, num: '02', word: 'コンピューター', reading: 'コンピューター', chinese: '電腦' },
+          { lesson: 9, num: '03', word: 'これから', reading: 'これから', chinese: '今後' },
+          { lesson: 9, num: '04', word: '説明', reading: 'せつめい', chinese: '說明' },
+          { lesson: 9, num: '05', word: 'よく', reading: 'よく', chinese: '好好地' },
+          { lesson: 9, num: '06', word: '学生証', reading: 'がくせいしょう', chinese: '學生證' },
+          { lesson: 9, num: '07', word: '持って行く', reading: 'もっていく', chinese: '帶去' },
+          { lesson: 9, num: '08', word: 'それから', reading: 'それから', chinese: '然後' },
+          { lesson: 9, num: '09', word: '声', reading: 'こえ', chinese: '聲音' },
+          { lesson: 9, num: '10', word: '話す', reading: 'はなす', chinese: '說' },
+          { lesson: 9, num: '11', word: '飲み物', reading: 'のみもの', chinese: '飲料' },
+          { lesson: 9, num: '12', word: '(かばんに)入れる', reading: '(かばんに)いれる', chinese: '放入包裡' },
+          { lesson: 9, num: '13', word: '持つ', reading: 'もつ', chinese: '持有' },
+          { lesson: 9, num: '14', word: '呼ぶ', reading: 'よぶ', chinese: '呼叫' },
+          { lesson: 9, num: '15', word: '死ぬ', reading: 'しぬ', chinese: '死' },
+          { lesson: 9, num: '16', word: '騒ぐ', reading: 'さわぐ', chinese: '吵鬧' },
+          { lesson: 9, num: '17', word: 'もう一度', reading: 'もういちど', chinese: '再一次' },
+          { lesson: 9, num: '18', word: '言う', reading: 'いう', chinese: '說' },
+          { lesson: 9, num: '19', word: '手伝う', reading: 'てつだう', chinese: '幫忙' },
+          { lesson: 9, num: '20', word: '砂糖', reading: 'さとう', chinese: '砂糖' },
+          { lesson: 9, num: '21', word: '(砂糖を)取る', reading: '(さとうを)とる', chinese: '拿取' },
+          { lesson: 9, num: '22', word: '写真', reading: 'しゃしん', chinese: '照片' },
+          { lesson: 9, num: '23', word: '(写真を)撮る', reading: '(しゃしんを)とる', chinese: '拍照' },
+          { lesson: 9, num: '24', word: '遅れる', reading: 'おくれる', chinese: '遲到' },
+          { lesson: 9, num: '25', word: '泳ぐ', reading: 'およぐ', chinese: '游泳' },
+          { lesson: 9, num: '27', word: '使う', reading: 'つかう', chinese: '使用' },
+          { lesson: 9, num: '28', word: 'シャワー', reading: 'シャワー', chinese: '淋浴' },
+          { lesson: 9, num: '29', word: '開ける', reading: 'あける', chinese: '打開' },
+          { lesson: 9, num: '30', word: '座る', reading: 'すわる', chinese: '坐' },
+          { lesson: 9, num: '31', word: '雑誌', reading: 'ざっし', chinese: '雜誌' },
+          { lesson: 9, num: '32', word: '放課後', reading: 'ほうかご', chinese: '放學後' },
+          { lesson: 9, num: '33', word: '図書館員', reading: 'としょかんいん', chinese: '圖書館員' },
+          { lesson: 9, num: '34', word: '探す', reading: 'さがす', chinese: '尋找' },
+          { lesson: 9, num: '36', word: '説明する', reading: 'せつめいする', chinese: '說明' },
+          { lesson: 9, num: '37', word: 'まず', reading: 'まず', chinese: '首先' },
+          { lesson: 9, num: '38', word: '(名前を)入れる', reading: '(なまえを)いれる', chinese: '輸入名字' },
+          { lesson: 9, num: '39', word: '押す', reading: 'おす', chinese: '按；推' },
+          { lesson: 9, num: '40', word: '本棚', reading: 'ほんだな', chinese: '書架' },
+          { lesson: 9, num: '41', word: 'お願いする', reading: 'おねがいする', chinese: '拜託' },
+          { lesson: 9, num: '42', word: '教える', reading: 'おしえる', chinese: '教' },
+          { lesson: 9, num: '43', word: 'コピー機', reading: 'コピーき', chinese: '影印機' },
+          { lesson: 9, num: '44', word: '作る', reading: 'つくる', chinese: '製作' },
+          { lesson: 9, num: '45', word: '暗証番号', reading: 'あんしょうばんごう', chinese: '密碼' },
+          { lesson: 9, num: '46', word: '金額', reading: 'きんがく', chinese: '金額' },
+          { lesson: 9, num: '47', word: 'プリント', reading: 'プリント', chinese: '印刷品' },
+          { lesson: 9, num: '48', word: '置く', reading: 'おく', chinese: '放置' },
+          { lesson: 9, num: '49', word: 'ふた', reading: 'ふた', chinese: '蓋子' },
+          { lesson: 9, num: '50', word: '(ふたを)する', reading: '(ふたを)する', chinese: '蓋上' },
+          { lesson: 9, num: '51', word: 'ボタン(を押す)', reading: 'ボタン(をおす)', chinese: '按鈕' },
+          { lesson: 9, num: '52', word: '洗濯物', reading: 'せんたくもの', chinese: '待洗衣物' },
+          { lesson: 9, num: '53', word: '洗剤', reading: 'せんざい', chinese: '洗衣劑' },
+          { lesson: 9, num: '54', word: '(お)風呂', reading: '(お)ふろ', chinese: '浴室' },
+          { lesson: 9, num: '55', word: '(お風呂に)入る', reading: '(おふろに)はいる', chinese: '洗澡' },
+          { lesson: 9, num: '56', word: 'ハンドバッグ', reading: 'ハンドバッグ', chinese: '手提包' },
+          { lesson: 9, num: '57', word: 'いっしょに', reading: 'いっしょに', chinese: '一起' },
+          { lesson: 9, num: '58', word: '地図', reading: 'ちず', chinese: '地圖' },
+          { lesson: 9, num: '59', word: 'カウンター', reading: 'カウンター', chinese: '櫃檯' },
+          { lesson: 9, num: '60', word: '何か', reading: 'なにか', chinese: '某事物' },
+          { lesson: 9, num: '61', word: '着物', reading: 'きもの', chinese: '和服' },
+          { lesson: 9, num: '62', word: '規則', reading: 'きそく', chinese: '規則' },
+          { lesson: 9, num: '63', word: '帰って来る', reading: 'かえってくる', chinese: '回來' },
+          { lesson: 9, num: '64', word: '門限', reading: 'もんげん', chinese: '門禁' },
+          { lesson: 9, num: '65', word: 'どこか', reading: 'どこか', chinese: '某處' },
+          { lesson: 9, num: '66', word: 'おもしろい', reading: 'おもしろい', chinese: '有趣' },
+          { lesson: 9, num: '67', word: '横浜', reading: 'よこはま', chinese: '橫濱' },
+          { lesson: 9, num: '68', word: 'ゲーム', reading: 'ゲーム', chinese: '遊戲' },
+          { lesson: 9, num: '69', word: 'ゲーム(を)する', reading: 'ゲーム(を)する', chinese: '玩遊戲' }
+        ];
+
+        // --- 1-2. 依あいうえお順（五十音順）重新排列每一課的單字 ---
+        const GOJUON_ORDER = [
+          'あ','ぁ','い','ぃ','う','ぅ','ゔ','え','ぇ','お','ぉ',
+          'か','が','き','ぎ','く','ぐ','け','げ','こ','ご',
+          'さ','ざ','し','じ','す','ず','せ','ぜ','そ','ぞ',
+          'た','だ','ち','ぢ','っ','つ','づ','て','で','と','ど',
+          'な','に','ぬ','ね','の',
+          'は','ば','ぱ','ひ','び','ぴ','ふ','ぶ','ぷ','へ','べ','ぺ','ほ','ぼ','ぽ',
+          'ま','み','む','め','も',
+          'や','ゃ','ゆ','ゅ','よ','ょ',
+          'ら','り','る','れ','ろ',
+          'わ','ゎ','ゐ','ゑ','を','ん'
+        ];
+        const GOJUON_RANK = {};
+        GOJUON_ORDER.forEach((ch, i) => { GOJUON_RANK[ch] = i; });
+        // 各假名對應的母音，用來還原長音記號「ー」實際代表的發音
+        const KANA_VOWEL = {
+          あ:'a',か:'a',が:'a',さ:'a',ざ:'a',た:'a',だ:'a',な:'a',は:'a',ば:'a',ぱ:'a',ま:'a',や:'a',ら:'a',わ:'a',ゃ:'a',ぁ:'a',
+          い:'i',き:'i',ぎ:'i',し:'i',じ:'i',ち:'i',ぢ:'i',に:'i',ひ:'i',び:'i',ぴ:'i',み:'i',り:'i',ゐ:'i',ぃ:'i',
+          う:'u',く:'u',ぐ:'u',す:'u',ず:'u',つ:'u',づ:'u',ぬ:'u',ふ:'u',ぶ:'u',ぷ:'u',む:'u',ゆ:'u',る:'u',ゅ:'u',ぅ:'u',ゔ:'u',っ:'u',
+          え:'e',け:'e',げ:'e',せ:'e',ぜ:'e',て:'e',で:'e',ね:'e',へ:'e',べ:'e',ぺ:'e',め:'e',れ:'e',ゑ:'e',ぇ:'e',
+          お:'o',こ:'o',ご:'o',そ:'o',ぞ:'o',と:'o',ど:'o',の:'o',ほ:'o',ぼ:'o',ぽ:'o',も:'o',よ:'o',ろ:'o',を:'o',ょ:'o',ぉ:'o'
+        };
+        const VOWEL_KANA = { a: 'あ', i: 'い', u: 'う', e: 'え', o: 'お' };
+
+        // 將讀音（片假名／平假名，含括號、波浪號等符號）轉換成純假名的「五十音排序鍵」
+        const toGojuonKey = (reading) => {
+          if (!reading) return '';
+          // 片假名 → 平假名
+          let s = reading.replace(/[\u30a1-\u30f6]/g, (m) => String.fromCharCode(m.charCodeAt(0) - 0x60));
+          // 拿掉括號符號本身，但保留括號內的假名（例如「(お)かし」→「おかし」）
+          s = s.replace(/[（）()]/g, '');
+          // 只保留平假名與長音記號，其餘符號（～、／、數字、中點等）忽略
+          s = s.replace(/[^\u3040-\u309fー]/g, '');
+          // 將長音記號「ー」還原為前一個假名的母音，才能正確比較順序
+          let resolved = '';
+          for (const ch of s) {
+            if (ch === 'ー') {
+              const prevVowel = KANA_VOWEL[resolved[resolved.length - 1]];
+              resolved += prevVowel ? VOWEL_KANA[prevVowel] : '';
+            } else {
+              resolved += ch;
+            }
+          }
+          return resolved;
+        };
+
+        // 依五十音順比較兩個單字（逐字比對，濁音／半濁音排在清音之後）
+        const compareGojuon = (a, b) => {
+          const ka = toGojuonKey(a.reading);
+          const kb = toGojuonKey(b.reading);
+          const len = Math.max(ka.length, kb.length);
+          for (let i = 0; i < len; i++) {
+            const ca = ka[i];
+            const cb = kb[i];
+            if (ca === undefined) return -1;
+            if (cb === undefined) return 1;
+            if (ca === cb) continue;
+            const ra = GOJUON_RANK[ca] !== undefined ? GOJUON_RANK[ca] : 999;
+            const rb = GOJUON_RANK[cb] !== undefined ? GOJUON_RANK[cb] : 999;
+            if (ra !== rb) return ra - rb;
+            return ca < cb ? -1 : 1;
+          }
+          return 0;
+        };
+
+        // 各課內部依あいうえお順重新排列，課別之間仍維持第5課→第9課的順序
+        const rawVocabDataSorted = [...rawVocabDataRaw].sort((a, b) => {
+          if (a.lesson !== b.lesson) return a.lesson - b.lesson;
+          return compareGojuon(a, b);
+        });
+
+        // 排序後依課別重新編號（01, 02, 03...），並補上唯一 id
+        const lessonSeqCounter = {};
+        const rawVocabData = rawVocabDataSorted.map((item, index) => {
+          lessonSeqCounter[item.lesson] = (lessonSeqCounter[item.lesson] || 0) + 1;
+          const num = String(lessonSeqCounter[item.lesson]).padStart(2, '0');
+          return { id: index + 1, ...item, num };
+        });
+
+        // --- 2. VUE REACTIVE STATE VARIABLES ---
+        const currentView = ref('home');
+        const mobileMenuOpen = ref(false);
+        const speechRates = [0.6, 0.75, 1.0, 1.25];
+        const currentSpeechRate = ref(1.0);
+
+        const lessonOverview = [
+          { id: 5, title: '第 5 課', desc: '包含：冷蔵庫、ある、ケーキ、喫茶店、果物等 48 個位置與空間名稱。' },
+          { id: 6, title: '第 6 課', desc: '包含：料理、スポーツ、和食、クラシック等 41 個興趣與喜好詞彙。' },
+          { id: 7, title: '第 7 課', desc: '包含：財布、切手、時間詞（今日、明日）等 70 個日常生活與動作詞彙。' },
+          { id: 8, title: '第 8 課', desc: '包含：旅行、形容詞（楽しい、親切）等 75 個旅遊與評價詞彙。' },
+          { id: 9, title: '第 9 課', desc: '包含：説明、動詞（泳ぐ、座る）等 67 個指示與生活行為詞彙。' }
+        ];
+
+        const quizModes = [
+          { id: 'listen_select', title: '聽音選字', desc: '聆聽標準發音，挑選對應日語', icon: 'fa-solid fa-volume-high' },
+          { id: 'word_to_cn', title: '看單字選中文', desc: '看日語單字，選擇中文釋義', icon: 'fa-solid fa-font' },
+          { id: 'cn_to_word', title: '看中文選單字', desc: '看中文解釋，選擇日語單字', icon: 'fa-solid fa-language' },
+          { id: 'kanji_to_reading', title: '看漢字選讀音', desc: '辨識日語漢字，選擇假名讀音', icon: 'fa-solid fa-graduation-cap' },
+          { id: 'reading_to_kanji', title: '看讀音選漢字', desc: '給予假名讀音，對應正確漢字', icon: 'fa-solid fa-spell-check' },
+          { id: 'kana_input', title: '假名輸入', desc: '自行打字輸入正確的日語讀音', icon: 'fa-solid fa-keyboard' },
+          { id: 'spelling', title: '單字拼寫', desc: '組合拆解字元，拼出完整單字', icon: 'fa-solid fa-cubes' },
+          { id: 'matching', title: '配對遊戲', desc: '左右連線，快速媒合單字與中文', icon: 'fa-solid fa-network-wired' },
+          { id: 'memory_flip', title: '記憶翻牌', desc: '考驗記憶，翻牌找出對應配對', icon: 'fa-solid fa-clone' }
+        ];
+
+        // Selections & Lists
+        const selectedLessonFilter = ref(0); // 0 = all
+        const activeWordList = ref([]);
+        const currentWordIndex = ref(0);
+        const showMeaning = ref(false);
+
+        // Local Storage state
+        const favorites = ref([]);
+        const mistakes = ref([]);
+
+        // Voice recorder states
+        const isRecording = ref(false);
+        const mediaRecorder = ref(null);
+        const audioChunks = ref([]);
+        const userAudioUrl = ref(null);
+        // 偵測目前瀏覽器（含 LINE 內建瀏覽器等 App 內嵌瀏覽器）是否支援錄音功能
+        const recordingSupported = ref(!!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder));
+
+        // Continuous audio state
+        const continuousIndex = ref(0);
+        const isPlayingContinuous = ref(false);
+        let continuousTimer = null;
+
+        // Quiz State
+        const activeQuizMode = ref('');
+        const quizCurrentStep = ref(0);
+        const quizTotalSteps = ref(10);
+        const quizScore = ref(0);
+        const currentQuizQuestion = ref(null);
+        const quizAnswered = ref(false);
+        const quizLastCorrect = ref(false);
+        const selectedOption = ref(null);
+
+        // 本次測驗尚未出過題的單字佇列，用來避免同一場測驗重複抽到相同單字
+        let quizWordQueue = [];
+
+        // 從佇列中抽出指定數量、彼此不重複的單字；佇列不足時才重新洗牌整個範圍補充
+        // （只有在單字範圍本身小於所需抽取數量時，才會被迫重複，屬合理極限情況）
+        const drawUniqueWords = (count, sourceList) => {
+          if (quizWordQueue.length < count) {
+            quizWordQueue = [...sourceList].sort(() => 0.5 - Math.random());
+          }
+          return quizWordQueue.splice(0, count);
+        };
+
+        // Custom Quiz Mode Specific States
+        const userKanaInput = ref('');
+        const userSpellingList = ref([]);
+        const matchSelectedLeft = ref(null);
+        const matchSelectedRight = ref(null);
+        const memoryFlippedCards = ref([]);
+
+        // Teacher Management State
+        const teacherSearchQuery = ref('');
+        const teacherLessonFilter = ref(0);
+
+        // --- 3. METHODS & AUDIO LOGIC ---
+        // 明確挑選最佳的日語（東京腔標準語）語音，避免瀏覽器隨機挑到品質較差的預設語音
+        const japaneseVoice = ref(null);
+        const japaneseVoiceLabel = ref('系統預設語音');
+
+        const pickBestJapaneseVoice = () => {
+          if (!('speechSynthesis' in window)) return;
+          const voices = window.speechSynthesis.getVoices();
+          const jaVoices = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('ja'));
+          if (jaVoices.length === 0) return;
+
+          // 依常見高品質日語語音名稱排序優先順序（涵蓋 Chrome / Edge / Safari 常見語音）
+          const preferredNames = [
+            'google 日本語', 'google japanese', 'kyoko', 'o-ren', 'otoya',
+            'microsoft nanami', 'microsoft keita', 'microsoft ayumi', 'nanami', 'haruka'
+          ];
+          let best = jaVoices.find(v => preferredNames.some(name => v.name.toLowerCase().includes(name)));
+          // 次選：語音名稱明確標示為 ja-JP（日本本土標準腔）
+          if (!best) best = jaVoices.find(v => v.lang === 'ja-JP');
+          // 最後退而求其次：任一日語語音
+          if (!best) best = jaVoices[0];
+
+          japaneseVoice.value = best;
+          japaneseVoiceLabel.value = best ? best.name : '系統預設語音';
+        };
+
+        const speakWord = (text, customRate = null) => {
+          if (!('speechSynthesis' in window)) {
+            alert('您的瀏覽器不支援 Web Speech 語音合成。');
+            return;
+          }
+          window.speechSynthesis.cancel();
+          // Clean prompt brackets for audio
+          const cleanText = text.replace(/\(.*\)/g, '').trim();
+          const utterance = new SpeechSynthesisUtterance(cleanText || text);
+          utterance.lang = 'ja-JP';
+          if (japaneseVoice.value) {
+            utterance.voice = japaneseVoice.value;
+          }
+          utterance.rate = customRate || currentSpeechRate.value;
+          window.speechSynthesis.speak(utterance);
+        };
+
+        const testAudio = () => {
+          speakWord('こんにちは、日本語単語リスニングテストへようこそ。');
+        };
+
+        const navBtnClass = (view) => {
+          return currentView.value === view ? 'bg-indigo-800 font-bold text-white shadow' : 'hover:bg-indigo-600 text-indigo-100';
+        };
+
+        const navigateMobile = (view) => {
+          currentView.value = view;
+          mobileMenuOpen.value = false;
+        };
+
+        // Lesson Filtering Helpers
+        const getLessonWords = (lessonId) => {
+          return rawVocabData.filter(w => w.lesson === lessonId);
+        };
+
+        const getLessonProgress = (lessonId) => {
+          // Placeholder progress indicator calculated from bookmarks/studied
+          const total = getLessonWords(lessonId).length;
+          if (total === 0) return 0;
+          return Math.min(100, Math.floor(Math.random() * 20 + 10));
+        };
+
+        // --- 4. FLASHCARD MODE LOGIC ---
+        const startLessonStudy = (lessonId) => {
+          selectedLessonFilter.value = lessonId;
+          activeWordList.value = lessonId === 0 ? [...rawVocabData] : getLessonWords(lessonId);
+          currentWordIndex.value = 0;
+          showMeaning.value = false;
+          userAudioUrl.value = null;
+          currentView.value = 'flashcard';
+          if (activeWordList.value.length > 0) {
+            speakWord(activeWordList.value[0].reading);
+          }
+        };
+
+        const currentWord = computed(() => {
+          return activeWordList.value[currentWordIndex.value] || null;
+        });
+
+        const nextWord = () => {
+          if (currentWordIndex.value < activeWordList.value.length - 1) {
+            currentWordIndex.value++;
+            showMeaning.value = false;
+            userAudioUrl.value = null;
+            if (currentWord.value) speakWord(currentWord.value.reading);
+          }
+        };
+
+        const prevWord = () => {
+          if (currentWordIndex.value > 0) {
+            currentWordIndex.value--;
+            showMeaning.value = false;
+            userAudioUrl.value = null;
+            if (currentWord.value) speakWord(currentWord.value.reading);
+          }
+        };
+
+        const randomWord = () => {
+          const randomIndex = Math.floor(Math.random() * activeWordList.value.length);
+          currentWordIndex.value = randomIndex;
+          showMeaning.value = false;
+          userAudioUrl.value = null;
+          if (currentWord.value) speakWord(currentWord.value.reading);
+        };
+
+        // Microphone Recording Methods (MediaRecorder)
+        const startRecording = async () => {
+          if (!recordingSupported.value) {
+            alert('此瀏覽器不支援錄音功能，請改用手機內建的 Safari／Chrome 開啟本頁面，或改用電腦瀏覽器。');
+            return;
+          }
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            // 依瀏覽器實際支援情況選擇錄音格式（iOS Safari 多半不支援 webm，需退回 mp4 或系統預設）
+            const preferredMimeTypes = ['audio/webm', 'audio/mp4', 'audio/aac', 'audio/ogg'];
+            const supportedMimeType = preferredMimeTypes.find(t => window.MediaRecorder.isTypeSupported && window.MediaRecorder.isTypeSupported(t));
+            mediaRecorder.value = supportedMimeType ? new MediaRecorder(stream, { mimeType: supportedMimeType }) : new MediaRecorder(stream);
+            audioChunks.value = [];
+
+            mediaRecorder.value.ondataavailable = (event) => {
+              if (event.data.size > 0) audioChunks.value.push(event.data);
+            };
+
+            mediaRecorder.value.onstop = () => {
+              const blobType = mediaRecorder.value.mimeType || 'audio/webm';
+              const audioBlob = new Blob(audioChunks.value, { type: blobType });
+              userAudioUrl.value = URL.createObjectURL(audioBlob);
+              // 錄音結束後釋放麥克風，避免行動裝置持續顯示錄音中圖示
+              stream.getTracks().forEach(track => track.stop());
+            };
+
+            mediaRecorder.value.start();
+            isRecording.value = true;
+          } catch (err) {
+            alert('無法開啟麥克風權限，請確認已允許本頁面使用麥克風（' + err.message + '）');
+          }
+        };
+
+        const stopRecording = () => {
+          if (mediaRecorder.value && isRecording.value) {
+            mediaRecorder.value.stop();
+            isRecording.value = false;
+          }
+        };
+
+        const playUserAudio = () => {
+          if (userAudioUrl.value) {
+            const audio = new Audio(userAudioUrl.value);
+            audio.play();
+          }
+        };
+
+        const compareAudio = (wordText) => {
+          // Play original teacher voice first, then student recording
+          speakWord(wordText);
+          setTimeout(() => {
+            playUserAudio();
+          }, 1500);
+        };
+
+        // --- 5. CONTINUOUS PLAYBACK LOGIC ---
+        const startContinuousPlay = (lessonId) => {
+          selectedLessonFilter.value = lessonId;
+          activeWordList.value = lessonId === 0 ? [...rawVocabData] : getLessonWords(lessonId);
+          continuousIndex.value = 0;
+          isPlayingContinuous.value = true;
+          currentView.value = 'continuous';
+          playContinuousStep();
+        };
+
+        const playContinuousStep = () => {
+          if (!isPlayingContinuous.value) return;
+          const target = activeWordList.value[continuousIndex.value];
+          if (!target) return;
+
+          speakWord(target.reading);
+
+          continuousTimer = setTimeout(() => {
+            if (!isPlayingContinuous.value) return;
+            continuousIndex.value = (continuousIndex.value + 1) % activeWordList.value.length;
+            playContinuousStep();
+          }, 3500);
+        };
+
+        const pauseContinuousPlay = () => {
+          isPlayingContinuous.value = false;
+          clearTimeout(continuousTimer);
+          window.speechSynthesis.cancel();
+        };
+
+        const resumeContinuousPlay = () => {
+          isPlayingContinuous.value = true;
+          playContinuousStep();
+        };
+
+        const stopContinuousPlay = () => {
+          isPlayingContinuous.value = false;
+          clearTimeout(continuousTimer);
+          window.speechSynthesis.cancel();
+        };
+
+        // --- 6. BOOKMARK & MISTAKE MANAGEMENT ---
+        const isFavorite = (word) => {
+          return favorites.value.some(f => f.id === word.id);
+        };
+
+        const toggleFavorite = (word) => {
+          if (isFavorite(word)) {
+            favorites.value = favorites.value.filter(f => f.id !== word.id);
+          } else {
+            favorites.value.push(word);
+          }
+          saveLocalStorage();
+        };
+
+        const addMistake = (word) => {
+          if (!mistakes.value.some(m => m.id === word.id)) {
+            mistakes.value.push(word);
+            saveLocalStorage();
+          }
+        };
+
+        const removeMistake = (id) => {
+          mistakes.value = mistakes.value.filter(m => m.id !== id);
+          saveLocalStorage();
+        };
+
+        const clearMistakes = () => {
+          mistakes.value = [];
+          saveLocalStorage();
+        };
+
+        const saveLocalStorage = () => {
+          try {
+            localStorage.setItem('bunka_favs', JSON.stringify(favorites.value));
+            localStorage.setItem('bunka_mistakes', JSON.stringify(mistakes.value));
+          } catch (e) {
+            // 私密瀏覽模式或儲存空間已滿時，避免整個應用程式崩潰
+            console.warn('無法儲存本機資料：', e);
+          }
+        };
+
+        const loadLocalStorage = () => {
+          try {
+            const f = localStorage.getItem('bunka_favs');
+            const m = localStorage.getItem('bunka_mistakes');
+            if (f) favorites.value = JSON.parse(f);
+            if (m) mistakes.value = JSON.parse(m);
+          } catch (e) {
+            // 若本機資料損毀，改用空清單重新開始，避免整個應用程式無法載入
+            console.warn('無法讀取本機資料：', e);
+            favorites.value = [];
+            mistakes.value = [];
+          }
+        };
+
+        // --- 7. QUIZ ENGINE LOGIC ---
+        const openQuizMenu = (lessonId) => {
+          selectedLessonFilter.value = lessonId;
+          currentView.value = 'lessons';
+        };
+
+        const getQuizTitle = (modeKey) => {
+          const m = quizModes.find(item => item.id === modeKey);
+          return m ? m.title : '有聲測驗';
+        };
+
+        const startQuiz = (modeKey, customList = null) => {
+          activeQuizMode.value = modeKey;
+          activeWordList.value = customList || (selectedLessonFilter.value === 0 ? [...rawVocabData] : getLessonWords(selectedLessonFilter.value));
+          
+          if (activeWordList.value.length < 4) {
+            alert('該單字範圍項目少於 4 個，建議先選擇更多課別再進行測驗。');
+            return;
+          }
+
+          quizCurrentStep.value = 0;
+          quizTotalSteps.value = Math.min(10, activeWordList.value.length);
+          quizScore.value = 0;
+          currentView.value = 'quiz';
+          // 每次開始新測驗都重新洗牌題庫佇列，確保本場測驗不會重複抽到同一單字
+          quizWordQueue = [...activeWordList.value].sort(() => 0.5 - Math.random());
+          loadQuizQuestion();
+        };
+
+        const startMistakePractice = () => {
+          if (mistakes.value.length === 0) return;
+          startQuiz('cn_to_word', [...mistakes.value]);
+        };
+
+        const confirmExitQuiz = () => {
+          if (confirm('確定要放棄當前測驗嗎？')) {
+            currentView.value = 'lessons';
+          }
+        };
+
+        const loadQuizQuestion = () => {
+          quizAnswered.value = false;
+          quizLastCorrect.value = false;
+          selectedOption.value = null;
+          userKanaInput.value = '';
+          userSpellingList.value = [];
+          matchSelectedLeft.value = null;
+          matchSelectedRight.value = null;
+
+          // Pick target word — 從尚未出過題的佇列中抽取，避免同一場測驗重複出現相同單字
+          const target = drawUniqueWords(1, activeWordList.value)[0];
+
+          // Generate options (4 choices)
+          const wrongOptions = rawVocabData.filter(w => w.id !== target.id).sort(() => 0.5 - Math.random()).slice(0, 3);
+          const options = [target, ...wrongOptions].sort(() => 0.5 - Math.random());
+
+          if (activeQuizMode.value === 'spelling') {
+            // Char pool for spelling
+            const cleanWord = target.word.replace(/[\(\)]/g, '');
+            const chars = cleanWord.split('').map((c, i) => ({ char: c, id: i, used: false }));
+            // Add extra noise chars
+            chars.push({ char: 'あ', id: 99, used: false }, { char: 'い', id: 98, used: false });
+            chars.sort(() => 0.5 - Math.random());
+            currentQuizQuestion.value = { target, charPool: chars };
+          } else if (activeQuizMode.value === 'matching') {
+            // 配對題本身一次用掉多個單字，同樣從佇列抽取剩餘不重複的單字，湊滿 4 組
+            const matchItems = [target, ...drawUniqueWords(3, activeWordList.value)];
+            const leftList = matchItems.map(i => ({ id: i.id, word: i.word, matched: false }));
+            const rightList = [...matchItems].sort(() => 0.5 - Math.random()).map(i => ({ id: i.id, chinese: i.chinese, matched: false }));
+            currentQuizQuestion.value = { target, leftList, rightList };
+          } else if (activeQuizMode.value === 'memory_flip') {
+            // 翻牌記憶配對同樣一次用掉多個單字，從佇列抽取剩餘不重複的單字，湊滿 3 組
+            const flipItems = [target, ...drawUniqueWords(2, activeWordList.value)];
+            let cards = [];
+            flipItems.forEach(item => {
+              cards.push({ pairId: item.id, content: item.word, flipped: false, matched: false });
+              cards.push({ pairId: item.id, content: item.chinese, flipped: false, matched: false });
+            });
+            cards.sort(() => 0.5 - Math.random());
+            currentQuizQuestion.value = { target, cards };
+          } else {
+            currentQuizQuestion.value = { target, options };
+          }
+
+          // Auto play audio for listening mode
+          if (activeQuizMode.value === 'listen_select') {
+            setTimeout(() => speakWord(target.reading), 300);
+          }
+        };
+
+        const selectQuizOption = (opt) => {
+          if (quizAnswered.value) return;
+          quizAnswered.value = true;
+          selectedOption.value = opt;
+
+          if (opt.id === currentQuizQuestion.value.target.id) {
+            quizLastCorrect.value = true;
+            quizScore.value += 10;
+          } else {
+            quizLastCorrect.value = false;
+            addMistake(currentQuizQuestion.value.target);
+          }
+        };
+
+        const getOptionClass = (opt) => {
+          if (!quizAnswered.value) return 'bg-slate-50 border-slate-200 hover:bg-indigo-50 hover:border-indigo-300';
+          if (opt.id === currentQuizQuestion.value.target.id) return 'bg-emerald-100 border-emerald-500 text-emerald-900 font-bold';
+          if (selectedOption.value && opt.id === selectedOption.value.id) return 'bg-rose-100 border-rose-500 text-rose-900 font-bold';
+          return 'bg-slate-50 border-slate-200 opacity-50';
+        };
+
+        // Kana Input Submit
+        const submitKanaInput = () => {
+          if (quizAnswered.value) return;
+          quizAnswered.value = true;
+          const targetReading = currentQuizQuestion.value.target.reading.replace(/[\(\)]/g, '').trim();
+          const userText = userKanaInput.value.trim();
+
+          if (userText === targetReading) {
+            quizLastCorrect.value = true;
+            quizScore.value += 10;
+          } else {
+            quizLastCorrect.value = false;
+            addMistake(currentQuizQuestion.value.target);
+          }
+        };
+
+        // Spelling Mode Logic
+        const addSpellingChar = (item, poolIdx) => {
+          userSpellingList.value.push(item.char);
+          currentQuizQuestion.value.charPool[poolIdx].used = true;
+        };
+
+        const removeSpellingChar = (index) => {
+          const removedChar = userSpellingList.value.splice(index, 1)[0];
+          const poolItem = currentQuizQuestion.value.charPool.find(p => p.char === removedChar && p.used);
+          if (poolItem) poolItem.used = false;
+        };
+
+        const submitSpelling = () => {
+          if (quizAnswered.value) return;
+          quizAnswered.value = true;
+          const targetClean = currentQuizQuestion.value.target.word.replace(/[\(\)]/g, '');
+          const assembled = userSpellingList.value.join('');
+
+          if (assembled === targetClean) {
+            quizLastCorrect.value = true;
+            quizScore.value += 10;
+          } else {
+            quizLastCorrect.value = false;
+            addMistake(currentQuizQuestion.value.target);
+          }
+        };
+
+        // Matching Game Handlers
+        const selectMatchLeft = (item) => {
+          matchSelectedLeft.value = item;
+          checkMatchPair();
+        };
+
+        const selectMatchRight = (item) => {
+          matchSelectedRight.value = item;
+          checkMatchPair();
+        };
+
+        const checkMatchPair = () => {
+          if (matchSelectedLeft.value && matchSelectedRight.value) {
+            if (matchSelectedLeft.value.id === matchSelectedRight.value.id) {
+              matchSelectedLeft.value.matched = true;
+              matchSelectedRight.value.matched = true;
+            }
+            matchSelectedLeft.value = null;
+            matchSelectedRight.value = null;
+
+            // Check if all matched
+            const allDone = currentQuizQuestion.value.leftList.every(i => i.matched);
+            if (allDone) {
+              quizAnswered.value = true;
+              quizLastCorrect.value = true;
+              quizScore.value += 10;
+            }
+          }
+        };
+
+        const getMatchLeftClass = (item) => {
+          if (item.matched) return 'bg-emerald-100 border-emerald-400 text-emerald-800 opacity-60';
+          if (matchSelectedLeft.value && matchSelectedLeft.value.id === item.id) return 'bg-indigo-600 text-white border-indigo-700';
+          return 'bg-slate-50 border-slate-200 hover:bg-slate-100';
+        };
+
+        const getMatchRightClass = (item) => {
+          if (item.matched) return 'bg-emerald-100 border-emerald-400 text-emerald-800 opacity-60';
+          if (matchSelectedRight.value && matchSelectedRight.value.id === item.id) return 'bg-indigo-600 text-white border-indigo-700';
+          return 'bg-slate-50 border-slate-200 hover:bg-slate-100';
+        };
+
+        // Memory Flip Logic
+        const flipMemoryCard = (card) => {
+          if (quizAnswered.value || card.flipped || card.matched) return;
+          card.flipped = true;
+          memoryFlippedCards.value.push(card);
+
+          if (memoryFlippedCards.value.length === 2) {
+            const [c1, c2] = memoryFlippedCards.value;
+            if (c1.pairId === c2.pairId) {
+              c1.matched = true;
+              c2.matched = true;
+            } else {
+              setTimeout(() => {
+                c1.flipped = false;
+                c2.flipped = false;
+              }, 800);
+            }
+            memoryFlippedCards.value = [];
+
+            const allMatched = currentQuizQuestion.value.cards.every(c => c.matched);
+            if (allMatched) {
+              quizAnswered.value = true;
+              quizLastCorrect.value = true;
+              quizScore.value += 10;
+            }
+          }
+        };
+
+        const nextQuizQuestion = () => {
+          if (quizCurrentStep.value < quizTotalSteps.value - 1) {
+            quizCurrentStep.value++;
+            loadQuizQuestion();
+          } else {
+            currentView.value = 'quiz_result';
+          }
+        };
+
+        // --- 8. TEACHER DATA EXPORT & FILTER ---
+        const filteredTeacherWords = computed(() => {
+          return rawVocabData.filter(item => {
+            const matchLesson = teacherLessonFilter.value === 0 || item.lesson === teacherLessonFilter.value;
+            const q = teacherSearchQuery.value.trim().toLowerCase();
+            const matchSearch = !q || item.word.toLowerCase().includes(q) || item.reading.toLowerCase().includes(q) || item.chinese.includes(q);
+            return matchLesson && matchSearch;
+          });
+        });
+
+        const exportVocabularyData = () => {
+          const jsonStr = JSON.stringify(rawVocabData, null, 2);
+          const blob = new Blob([jsonStr], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'bunka_japanese_vocab_L5-L9.json';
+          a.click();
+        };
+
+        // OnMounted lifecycle
+        onMounted(() => {
+          loadLocalStorage();
+          // 部分瀏覽器（如 Chrome）的語音清單是非同步載入，需監聽 voiceschanged 事件
+          if ('speechSynthesis' in window) {
+            pickBestJapaneseVoice();
+            window.speechSynthesis.onvoiceschanged = pickBestJapaneseVoice;
+
+            // iOS Safari／LINE 內建瀏覽器已知問題：語音合成引擎閒置一段時間後會卡住不出聲，
+            // 定期喚醒可避免手機使用者遇到「按了播放卻沒有聲音」的狀況
+            setInterval(() => {
+              if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.pause();
+                window.speechSynthesis.resume();
+              }
+            }, 5000);
+          }
+        });
+
+        return {
+          currentView,
+          mobileMenuOpen,
+          speechRates,
+          currentSpeechRate,
+          japaneseVoiceLabel,
+          lessonOverview,
+          quizModes,
+          selectedLessonFilter,
+          activeWordList,
+          currentWordIndex,
+          showMeaning,
+          favorites,
+          mistakes,
+          isRecording,
+          recordingSupported,
+          userAudioUrl,
+          continuousIndex,
+          isPlayingContinuous,
+          activeQuizMode,
+          quizCurrentStep,
+          quizTotalSteps,
+          quizScore,
+          currentQuizQuestion,
+          quizAnswered,
+          quizLastCorrect,
+          userKanaInput,
+          userSpellingList,
+          teacherSearchQuery,
+          teacherLessonFilter,
+          filteredTeacherWords,
+          
+          speakWord,
+          testAudio,
+          navBtnClass,
+          navigateMobile,
+          getLessonWords,
+          getLessonProgress,
+          startLessonStudy,
+          currentWord,
+          nextWord,
+          prevWord,
+          randomWord,
+          startRecording,
+          stopRecording,
+          playUserAudio,
+          compareAudio,
+          startContinuousPlay,
+          pauseContinuousPlay,
+          resumeContinuousPlay,
+          stopContinuousPlay,
+          isFavorite,
+          toggleFavorite,
+          removeMistake,
+          clearMistakes,
+          openQuizMenu,
+          getQuizTitle,
+          startQuiz,
+          startMistakePractice,
+          confirmExitQuiz,
+          selectQuizOption,
+          getOptionClass,
+          submitKanaInput,
+          addSpellingChar,
+          removeSpellingChar,
+          submitSpelling,
+          selectMatchLeft,
+          selectMatchRight,
+          getMatchLeftClass,
+          getMatchRightClass,
+          flipMemoryCard,
+          nextQuizQuestion,
+          exportVocabularyData
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
